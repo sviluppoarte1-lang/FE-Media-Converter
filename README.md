@@ -1,16 +1,84 @@
-# ultimate_video_converter_pro
+# FE Media Converter
 
-A new Flutter project.
+FE Media Converter (Video Converter Pro) is a Linux desktop media toolkit built with Flutter.  
+It wraps a powerful FFmpeg-based workflow behind a clean interface so you can convert video, audio, and images, apply advanced filters, and process multiple files in batch without long command-line commands.
 
-## Getting Started
+Official repository: [https://github.com/sviluppoarte1-lang/Fe-Media-Converter](https://github.com/sviluppoarte1-lang/Fe-Media-Converter)
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- Convert between common video, audio, and image formats
+- Batch conversion queue with progress tracking
+- Advanced video, audio, and image filter controls
+- GPU-accelerated encoding when available (NVIDIA, Intel, AMD, VAAPI, Apple VideoToolbox)
+- AI-related enhancement pipeline integration for quality restoration workflows
+- In-app dependency checks and guided FFmpeg setup on Linux
+- Drag and drop file support
+- Multi-language UI support
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Supported Workflows
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Video conversion** with codec, quality, bitrate, and filter controls
+- **Audio extraction** from video and direct audio conversion
+- **Image conversion** with resizing, sharpening, denoise, and color adjustments
+- **Queue processing** for multiple files and mixed conversion sessions
+
+## Requirements
+
+- Linux (primary target platform)
+- FFmpeg installed and available in `PATH`
+- Python 3 (required by some advanced processing pipelines)
+
+> The app includes runtime checks for dependencies and can guide users through FFmpeg installation/update steps.
+
+## Build and Run (Development)
+
+1. Install Flutter SDK and Linux desktop dependencies.
+2. Install project dependencies:
+
+```bash
+flutter pub get
+```
+
+3. Run the app:
+
+```bash
+flutter run -d linux
+```
+
+4. Analyze the project:
+
+```bash
+flutter analyze
+```
+
+## Build Release
+
+```bash
+flutter build linux --release
+```
+
+Release bundle output:
+
+`build/linux/x64/release/bundle/`
+
+## Linux Packaging
+
+This project includes scripts for Linux distribution packages:
+
+- Debian package script: `scripts/build_deb.sh`
+- RPM package script: `scripts/build_rpm.sh`
+- AppImage package script: `scripts/build_appimage.sh`
+
+Metadata files for software centers/AppStream are included under `linux/` and packaging directories.
+
+## Notes
+
+- FFmpeg is the core engine used for transcoding and media processing.
+- Some advanced features may require additional Python packages and model files.
+- Runtime behavior can vary depending on GPU drivers and installed codec support.
+
+## License
+
+This repository currently does not declare a top-level license file.  
+If you plan to distribute or fork the project, add an explicit `LICENSE` file.
