@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.videoconverterpro</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>FE Media Converter</name>
+  <name xml:lang="it">FE Media Converter</name>
+  <summary>Convert and enhance video, audio, and images with FFmpeg and optional AI tools</summary>
+  <summary xml:lang="it">Converti e migliora video, audio e immagini con FFmpeg e strumenti AI opzionali</summary>
+
+  <description>
+    <p>
+      FE Media Converter (Video Converter Pro) is a desktop media toolkit for Linux. It wraps a powerful
+      FFmpeg-based pipeline behind a simple interface so you can batch-convert videos, audio tracks, and images,
+      tune quality, and apply professional filters without typing long command lines.
+    </p>
+    <p>Key capabilities:</p>
+    <ul>
+      <li>Video, audio, and image modes with format presets and codec selection (e.g. H.264, HEVC, VP9, AV1, AAC, MP3, Opus, PNG, WebP).</li>
+      <li>Quality controls: constant quality (CRF) or target bitrate, plus per-mode defaults you can persist.</li>
+      <li>Queue with pause, resume, stop, and concurrent jobs; optional default output folder and “same as input”.</li>
+      <li>Drag-and-drop and multi-file selection; open files from the file manager via the desktop entry.</li>
+      <li>Advanced video filters: noise reduction, color correction, stabilization, deinterlacing, color profiles, GPU-oriented presets when enabled.</li>
+      <li>Optional DRUNet AI denoising (downloads a model on first use) and PySceneDetect-based scene analysis with scene-aware optimization hints.</li>
+      <li>Audio tools: volume, dynamics, EQ presets, noise reduction, reverb, and preview-style workflows where supported.</li>
+      <li>Image pipeline: filters, optional super-resolution / upscaling, custom resolution with aspect handling.</li>
+      <li>Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT), CPU thread and GPU acceleration options.</li>
+      <li>Integrated FFmpeg dependency check with guided install on common distributions.</li>
+    </ul>
+    <p>
+      FFmpeg must be installed on the system. Heavy Python dependencies for DRUNet and scene detection are set up from the app on first launch (not during package installation), with a progress dialog.
+    </p>
+  </description>
+
+  <description xml:lang="it">
+    <p>
+      FE Media Converter (Video Converter Pro) è un ambiente desktop per Linux che incapsula una pipeline FFmpeg
+      completa: conversioni batch di video, audio e immagini, controllo della qualità e filtri professionali
+      senza riga di comando.
+    </p>
+    <p>Funzionalità principali:</p>
+    <ul>
+      <li>Modalità video, audio e immagine con preset di formato e scelta codec (es. H.264, HEVC, VP9, AV1, AAC, MP3, Opus, PNG, WebP).</li>
+      <li>Qualità: CRF o bitrate costante; impostazioni predefinite persistenti.</li>
+      <li>Coda con pausa, ripresa, arresto e conversioni parallele; cartella di output opzionale o accanto al file sorgente.</li>
+      <li>Trascinamento file e apertura dal file manager tramite la voce .desktop.</li>
+      <li>Filtri video: riduzione rumore, colore, stabilizzazione, deinterlacciamento, profili colore, preset GPU se abilitati.</li>
+      <li>Opzionale: denoising DRUNet (modello scaricato al bisogno) e analisi scene con PySceneDetect.</li>
+      <li>Audio: volume, dinamica, equalizzazione, riduzione rumore, riverbero e anteprima dove supportato.</li>
+      <li>Immagini: filtri, super-risoluzione/upscaling, risoluzione personalizzata.</li>
+      <li>Tema, lingua dell’interfaccia (EN, IT, FR, DE, ES, PT), thread CPU e accelerazione GPU.</li>
+      <li>Verifica FFmpeg all’avvio con guida d’installazione.</li>
+    </ul>
+    <p>
+      FFmpeg deve essere presente sul sistema. Le dipendenze Python pesanti per DRUNet e le scene vengono installate al primo avvio dell’app (non durante dpkg), con una finestra di avanzamento.
+    </p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Audio</category>
+    <category>Graphics</category>
+  </categories>
+
+  <keywords>
+    <keyword>ffmpeg</keyword>
+    <keyword>converter</keyword>
+    <keyword>video</keyword>
+    <keyword>audio</keyword>
+    <keyword>image</keyword>
+    <keyword>transcode</keyword>
+  </keywords>
+
+  <bundle type="deb">video-converter-pro</bundle>
+
+  <provides>
+    <binary>video_converter_pro</binary>
+  </provides>
+
+  <launchable type="desktop-id">com.videoconverterpro.desktop</launchable>
+
+  <url type="homepage">https://github.com/sviluppoarte1-lang/Fe-Media-Converter</url>
+  <url type="vcs">https://github.com/sviluppoarte1-lang/Fe-Media-Converter</url>
+  <developer id="com.videoconverterpro">
+    <name>Marco Di Giangiacomo</name>
+  </developer>
+
+  <content_rating type="oars-1.1"/>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <releases>
+    <release version="2.0.2" date="2026-03-22">
+      <description>
+        <p>AppStream linked to Debian package; long description for Software centers. Python venv setup moved to first app launch.</p>
+      </description>
+    </release>
+  </releases>
+</component>

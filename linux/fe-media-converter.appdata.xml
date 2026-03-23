@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>fe-media-converter.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0</project_license>
+  <name>FE MEDIA CONVERTER</name>
+  <summary>Professional video, audio and image conversion application</summary>
+  <description>
+    <p>
+      FE MEDIA CONVERTER is a professional media conversion application that supports
+      video, audio, and image formats. It provides advanced filtering options,
+      GPU acceleration, and AI-powered enhancements for high-quality conversions.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Convert videos, audio files, and images to various formats</li>
+      <li>Advanced video filters with automatic optimization</li>
+      <li>Professional audio filters and equalizer</li>
+      <li>Image enhancement and upscaling</li>
+      <li>GPU acceleration support (NVIDIA, AMD, Intel)</li>
+      <li>AI-powered video restoration (VRT)</li>
+      <li>Batch conversion with queue management</li>
+      <li>Custom resolution and quality settings</li>
+    </ul>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main interface with conversion options</caption>
+    </screenshot>
+    <screenshot>
+      <caption>Advanced video filters panel</caption>
+    </screenshot>
+    <screenshot>
+      <caption>Conversion queue management</caption>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/sviluppoarte1-lang/Fe-Media-Converter</url>
+  <url type="vcs">https://github.com/sviluppoarte1-lang/Fe-Media-Converter</url>
+  <provides>
+    <binary>fe-media-converter</binary>
+  </provides>
+  <releases>
+    <release version="2.0.2" date="2024-01-01">
+      <description>
+        <p>Version 2.0.2 release with improved stability and new features.</p>
+      </description>
+    </release>
+  </releases>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Audio</category>
+    <category>Graphics</category>
+  </categories>
+  <keywords>
+    <keyword>video</keyword>
+    <keyword>audio</keyword>
+    <keyword>image</keyword>
+    <keyword>converter</keyword>
+    <keyword>ffmpeg</keyword>
+    <keyword>media</keyword>
+    <keyword>conversion</keyword>
+  </keywords>
+  <launchable type="desktop-id">fe-media-converter.desktop</launchable>
+</component>
