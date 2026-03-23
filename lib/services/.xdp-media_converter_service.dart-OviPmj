@@ -1,0 +1,378 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:process_run/process_run.dart';
+import 'package:video_converter_pro/models/media_type.dart';
+import 'package:video_converter_pro/models/video_filters.dart';
+import 'package:video_converter_pro/models/audio_filters.dart';
+
+class MediaConverterService {
+  final Shell _shell = Shell();
+  static const int _timeoutSeconds = 3600;
+
+  Future<void> convertMedia({
+    required String inputPath,
+    required String outputPath,
+    required MediaType mediaType,
+    required String format,
+    required int videoQuality,
+    required int audioQuality,
+    required int audioBitrate,
+    required VideoFilters videoFilters,
+    required AudioFilters audioFilters,
+    required void Function(double progress) onProgress,
+  }) async {
+    final inputFile = File(inputPath);
+    if (!await inputFile.exists()) {
+      throw Exception('File di input non trovato: $inputPath');
+    }
+
+    final outputFile = File(outputPath);
+    final outputDir = outputFile.parent;
+    if (!await outputDir.exists()) {
+      await outputDir.create(recursive: true);
+    }
+
+    List<String> arguments = ['-i', inputPath];
+
+    // Aggiungi filtri in base al tipo di media
+    switch (mediaType) {
+      case MediaType.video:
+        arguments.addAll(_buildVideoArguments(
+          outputPath: outputPath,
+          videoQuality: videoQuality,
+          audioQuality: audioQuality,
+          videoFilters: videoFilters,
+          audioFilters: audioFilters,
+        ));
+        break;
+      case MediaType.audio:
+        arguments.addAll(_buildAudioArguments(
+          outputPath: outputPath,
+          audioBitrate: audioBitrate,
+          audioFilters: audioFilters,
+        ));
+        break;
+      case MediaType.image:
+        arguments.addAll(_buildImageArguments(
+          outputPath: outputPath,
+          format: format,
+        ));
+        break;
+    }
+
+    final process = await _shell.start('ffmpeg', arguments);
+    return _monitorProcess(process, onProgress);
+  }
+
+  List<String> _buildVideoArguments({
+    required String outputPath,
+    required int videoQuality,
+    required int audioQuality,
+    required VideoFilters videoFilters,
+    required AudioFilters audioFilters,
+  }) {
+    final List<String> args = [];
+
+    // Filtri video
+    final videoFilterComplex = _buildVideoFilterComplex(videoFilters);
+    if (videoFilterComplex.isNotEmpty) {
+      args.addAll(['-vf', videoFilterComplex]);
+    }
+
+    // Filtri audio
+    final audioFilterComplex = _buildAudioFilterComplex(audioFilters);
+    if (audioFilterComplex.isNotEmpty) {
+      args.addAll(['-af', audioFilterComplex]);
+    }
+
+    // Codec video
+    args.addAll([
+      '-c:v',
+      'libx264',
+      '-crf',
+      videoQuality.toString(),
+      '-preset',
+      'medium',
+    ]);
+
+    // Codec audio
+    args.addAll([
+      '-c:a',
+      'aac',
+      '-b:a',
+      '${audioQuality}k',
+    ]);
+
+    args.addAll(['-movflags', '+faststart', '-y', outputPath]);
+
+    return args;
+  }
+
+  List<String> _buildAudioArguments({
+    required String outputPath,
+    required int audioBitrate,
+    required AudioFilters audioFilters,
+  }) {
+    final List<String> args = [];
+
+    // Filtri audio
+    final audioFilterComplex = _buildAudioFilterComplex(audioFilters);
+    if (audioFilterComplex.isNotEmpty) {
+      args.addAll(['-af', audioFilterComplex]);
+    }
+
+    // Codec audio in base al formato
+    switch (outputPath.split('.').last.toLowerCase()) {
+      case 'mp3':
+        args.addAll([
+          '-c:a',
+          'libmp3lame',
+          '-b:a',
+          '${audioBitrate}k',
+          '-q:a',
+          '2',
+        ]);
+        break;
+      case 'wav':
+        args.addAll(['-c:a', 'pcm_s16le']);
+        break;
+      case 'flac':
+        args.addAll(['-c:a', 'flac', '-compression_level', '12']);
+        break;
+      case 'aac':
+        args.addAll(['-c:a', 'aac', '-b:a', '${audioBitrate}k']);
+        break;
+      case 'ogg':
+        args.addAll(['-c:a', 'libvorbis', '-q:a', '6']);
+        break;
+      case 'opus':
+        args.addAll(['-c:a', 'libopus', '-b:a', '${audioBitrate}k']);
+        break;
+      default:
+        args.addAll(['-c:a', 'copy']);
+    }
+
+    args.addAll(['-y', outputPath]);
+    return args;
+  }
+
+  List<String> _buildImageArguments({
+    required String outputPath,
+    required String format,
+  }) {
+    final List<String> args = [];
+
+    // Per le immagini, usiamo semplicemente il formato di output
+    args.addAll(['-y', outputPath]);
+
+    return args;
+  }
+
+  String _buildVideoFilterComplex(VideoFilters filters) {
+    final List<String> filterComponents = [];
+
+    if (filters.enableDeinterlace) {
+      filterComponents.add('yadif=0:-1:0');
+    }
+
+    if (filters.denoiseStrength > 0) {
+      final strength = (filters.denoiseStrength * 10.0).toStringAsFixed(1);
+      filterComponents.add('nlmeans=s=${strength}:p=7:r=3');
+    }
+
+    if (filters.enableStabilization) {
+      filterComponents.add('deshake=rx=16:ry=16');
+    }
+
+    final colorFilters = [];
+    
+    if (filters.brightness != 0.0 || filters.contrast != 1.0 || filters.saturation != 1.0) {
+      colorFilters.add('eq=brightness=${filters.brightness}:contrast=${filters.contrast}:saturation=${filters.saturation}');
+    }
+
+    if (filters.gamma != 1.0) {
+      colorFilters.add('gamma=${filters.gamma}');
+    }
+
+    if (filters.sharpness != 1.0) {
+      final lx = (5.0 * filters.sharpness).toStringAsFixed(1);
+      final ly = (5.0 * filters.sharpness).toStringAsFixed(1);
+      final la = (1.0 * filters.sharpness).toStringAsFixed(1);
+      colorFilters.add('unsharp=lx=${lx}:ly=${ly}:la=${la}');
+    }
+
+    if (colorFilters.isNotEmpty) {
+      filterComponents.add(colorFilters.join(','));
+    }
+
+    switch (filters.colorProfile) {
+      case 'vivid':
+        filterComponents.add('eq=saturation=1.3:contrast=1.1');
+        break;
+      case 'cinematic':
+        filterComponents.add('eq=contrast=1.2:brightness=-0.05:saturation=0.9');
+        break;
+      case 'bw':
+        filterComponents.add('hue=s=0');
+        break;
+      case 'sepia':
+        filterComponents.add('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
+        break;
+    }
+
+    return filterComponents.join(',');
+  }
+
+  String _buildAudioFilterComplex(AudioFilters filters) {
+    final List<String> filterComponents = [];
+
+    // Volume
+    if (filters.volume != 1.0) {
+      filterComponents.add('volume=${filters.volume}');
+    }
+
+    // Equalizer
+    if (filters.bass != 0.0 || filters.treble != 0.0) {
+      final bassGain = filters.bass.clamp(-20.0, 20.0).toStringAsFixed(1);
+      final trebleGain = filters.treble.clamp(-20.0, 20.0).toStringAsFixed(1);
+      filterComponents.add('equalizer=f=100:width_type=o:width=2:g=$bassGain,equalizer=f=10000:width_type=o:width=2:g=$trebleGain');
+    }
+
+    // Normalizzazione
+    if (filters.normalize) {
+      filterComponents.add('loudnorm=I=-16:TP=-1.5:LRA=11');
+    }
+
+    // Riduzione rumore
+    if (filters.removeNoise) {
+      final threshold = (filters.noiseThreshold * 0.1).toStringAsFixed(2);
+      filterComponents.add('afftdn=nf=$threshold');
+    }
+
+    // Compressione
+    if (filters.compression > 0.0) {
+      final ratio = (1.0 + filters.compression * 9.0).toStringAsFixed(1);
+      filterComponents.add('compand=attacks=0:decays=0.3:points=-90/-90|-30/-9|0/-3:ratio=$ratio');
+    }
+
+    // Riverbero
+    if (filters.reverb > 0.0) {
+      final reverberance = (filters.reverb * 100).toInt();
+      filterComponents.add('aecho=0.8:0.9:${1000 + reverberance * 50}:0.3');
+    }
+
+    // Preset equalizer
+    switch (filters.equalizerPreset) {
+      case 'bass_boost':
+        filterComponents.add('bass=g=15');
+        break;
+      case 'treble_boost':
+        filterComponents.add('treble=g=10');
+        break;
+      case 'voice':
+        filterComponents.add('highpass=f=300,lowpass=f=3000');
+        break;
+    }
+
+    return filterComponents.join(',');
+  }
+
+  Future<void> _monitorProcess(Process process, void Function(double progress) onProgress) async {
+    final completer = Completer<void>();
+    StringBuffer errorBuffer = StringBuffer();
+
+    final timeoutTimer = Timer(Duration(seconds: _timeoutSeconds), () {
+      process.kill();
+      completer.completeError(TimeoutException('Conversione timeout'));
+    });
+
+    process.stderr.transform(const LineSplitter()).listen((String line) {
+      if (line.contains('time=')) {
+        onProgress(0.5); // Progresso simulato
+      }
+      
+      if (line.toLowerCase().contains('error')) {
+        errorBuffer.writeln(line);
+      }
+    });
+
+    process.done.then((ProcessResult result) {
+      timeoutTimer.cancel();
+      
+      if (result.exitCode == 0) {
+        onProgress(1.0);
+        completer.complete();
+      } else {
+        final errorMessage = errorBuffer.isNotEmpty 
+            ? errorBuffer.toString() 
+            : 'FFmpeg exited with code ${result.exitCode}';
+        completer.completeError(Exception(errorMessage));
+      }
+    }).catchError((error) {
+      timeoutTimer.cancel();
+      completer.completeError(error);
+    });
+
+    return completer.future;
+  }
+
+  Future<bool> isFFmpegAvailable() async {
+    try {
+      final result = await _shell.run('which', ['ffmpeg']);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Estrazione audio da video
+  Future<void> extractAudioFromVideo({
+    required String videoPath,
+    required String outputPath,
+    required AudioFilters audioFilters,
+    required void Function(double progress) onProgress,
+  }) async {
+    final arguments = [
+      '-i',
+      videoPath,
+      '-vn', // No video
+      '-acodec',
+      'libmp3lame',
+      '-q:a',
+      '2',
+      '-y',
+      outputPath,
+    ];
+
+    final audioFilterComplex = _buildAudioFilterComplex(audioFilters);
+    if (audioFilterComplex.isNotEmpty) {
+      arguments.insert(2, '-af');
+      arguments.insert(3, audioFilterComplex);
+    }
+
+    final process = await _shell.start('ffmpeg', arguments);
+    return _monitorProcess(process, onProgress);
+  }
+
+  // Estrazione frame da video
+  Future<void> extractFrameFromVideo({
+    required String videoPath,
+    required String outputPath,
+    required String timestamp, // HH:MM:SS
+    required void Function(double progress) onProgress,
+  }) async {
+    final arguments = [
+      '-i',
+      videoPath,
+      '-ss',
+      timestamp,
+      '-vframes',
+      '1',
+      '-y',
+      outputPath,
+    ];
+
+    final process = await _shell.start('ffmpeg', arguments);
+    return _monitorProcess(process, onProgress);
+  }
+}
