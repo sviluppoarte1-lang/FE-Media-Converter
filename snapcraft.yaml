@@ -15,20 +15,14 @@ description: |
     defaults you can persist.
   - Queue with pause, resume, stop, and concurrent jobs; optional default output
     folder and "same as input".
-  - Drag-and-drop and multi-file selection; open files from the file manager via
-    the desktop entry.
+  - Drag-and-drop and multi-file selection.
   - Advanced video filters: noise reduction, color correction, stabilization,
     deinterlacing, color profiles, GPU-oriented presets when enabled.
-  - Optional DRUNet AI denoising and PySceneDetect-based scene analysis with
-    scene-aware optimization hints.
+  - Optional DRUNet AI denoising and PySceneDetect-based scene analysis.
   - Audio tools: volume, dynamics, EQ presets, noise reduction, reverb.
-  - Image pipeline: filters, optional super-resolution / upscaling, custom
-    resolution with aspect handling.
-  - Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT), CPU thread
-    and GPU acceleration options.
-  - Integrated FFmpeg dependency check with guided install on common
-    distributions.
-
+  - Image pipeline: filters, optional super-resolution / upscaling.
+  - Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT).
+  - Integrated FFmpeg dependency check with guided install.
 grade: stable
 confinement: strict
 license: MIT
@@ -38,8 +32,7 @@ architectures:
 apps:
   fe-media-converter:
     command: video_converter_pro
-    desktop: com.videoconverterpro.desktop
-    extensions: [gnome]
+    desktop: meta/gui/com.videoconverterpro.desktop
     environment:
       TMPDIR: $XDG_RUNTIME_DIR
     plugs:
@@ -50,16 +43,17 @@ apps:
       - wayland
       - opengl
       - audio-record
+      - audio-playback
       - desktop
       - desktop-legacy
+      - gsettings
 
 parts:
   fe-media-converter:
     source: .
-    plugin: dump
+    plugin: flutter
+    flutter-channel: stable
     source-type: local
-    organize:
-      video_converter_pro: bin/video_converter_pro
     build-packages:
       - cmake
       - ninja-build
@@ -72,26 +66,7 @@ parts:
       - liblzma5
     override-build: |
       craftctl default
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      mkdir -p $CRAFT_PART_INSTALL/lib
-      mkdir -p $CRAFT_PART_INSTALL/data
-      mkdir -p $CRAFT_PART_INSTALL/meta/gui
-      mkdir -p $CRAFT_PART_INSTALL/usr/share/metainfo
-
-      # Build the Flutter app with system Flutter
-      FLUTTER=$HOME/flutter/bin/flutter
-      $FLUTTER build linux --release
-
-      # Copy binaries
-      cp build/linux/x64/release/bundle/video_converter_pro $CRAFT_PART_INSTALL/bin/
-      cp -r build/linux/x64/release/bundle/lib/* $CRAFT_PART_INSTALL/lib/
-
-      # Copy assets
-      cp -r build/linux/x64/release/bundle/data/* $CRAFT_PART_INSTALL/data/
-
-      # Copy desktop file and icon
-      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.desktop $CRAFT_PART_INSTALL/meta/gui/
-      cp $CRAFT_PART_SRC/assets/icons/icon.png $CRAFT_PART_INSTALL/meta/gui/
-
-      # Copy metainfo
-      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.metainfo.xml $CRAFT_PART_INSTALL/usr/share/metainfo/
+      install -Dm644 "$CRAFT_PART_SRC/assets/icons/icon.png" \
+        "$CRAFT_PART_INSTALL/meta/gui/icon.png"
+      install -Dm644 "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" \
+        "$CRAFT_PART_INSTALL/meta/gui/com.videoconverterpro.desktop"
