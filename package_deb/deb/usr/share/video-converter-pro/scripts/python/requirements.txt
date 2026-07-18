@@ -1,0 +1,25 @@
+# Python dependencies for Video Converter Pro
+# DRUNet denoising
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# PySceneDetect for scene detection
+scenedetect[opencv]>=0.6.7
+
+# VRT (Video Restoration Transformer) - integrato in scripts/python/vrt_repo
+# Dipendenze richieste da main_test_vrt.py
+einops>=0.6.0
+timm>=0.9.0
+requests>=2.28.0
+pyyaml>=6.0
+scikit-image>=0.20.0
+scipy>=1.10.0
+addict>=2.4.0
+future>=0.18.0
+
+# Additional utilities
+tqdm>=4.66.0
+

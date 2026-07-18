@@ -1,0 +1,97 @@
+name: fe-media-converter
+base: core22
+version: 2.0.2
+summary: Convert and enhance video, audio, and images with FFmpeg and optional AI tools
+description: |
+  FE Media Converter (Video Converter Pro) is a desktop media toolkit for Linux.
+  It wraps a powerful FFmpeg-based pipeline behind a simple interface so you can
+  batch-convert videos, audio tracks, and images, tune quality, and apply
+  professional filters without typing long command lines.
+
+  Key capabilities:
+  - Video, audio, and image modes with format presets and codec selection
+    (e.g. H.264, HEVC, VP9, AV1, AAC, MP3, Opus, PNG, WebP).
+  - Quality controls: constant quality (CRF) or target bitrate, plus per-mode
+    defaults you can persist.
+  - Queue with pause, resume, stop, and concurrent jobs; optional default output
+    folder and "same as input".
+  - Drag-and-drop and multi-file selection; open files from the file manager via
+    the desktop entry.
+  - Advanced video filters: noise reduction, color correction, stabilization,
+    deinterlacing, color profiles, GPU-oriented presets when enabled.
+  - Optional DRUNet AI denoising and PySceneDetect-based scene analysis with
+    scene-aware optimization hints.
+  - Audio tools: volume, dynamics, EQ presets, noise reduction, reverb.
+  - Image pipeline: filters, optional super-resolution / upscaling, custom
+    resolution with aspect handling.
+  - Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT), CPU thread
+    and GPU acceleration options.
+  - Integrated FFmpeg dependency check with guided install on common
+    distributions.
+
+grade: stable
+confinement: strict
+license: MIT
+architectures:
+  - amd64
+
+apps:
+  fe-media-converter:
+    command: video_converter_pro
+    desktop: com.videoconverterpro.desktop
+    extensions: [gnome]
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
+    plugs:
+      - home
+      - removable-media
+      - network
+      - x11
+      - wayland
+      - opengl
+      - audio-record
+      - desktop
+      - desktop-legacy
+
+parts:
+  fe-media-converter:
+    source: .
+    plugin: dump
+    source-type: local
+    organize:
+      video_converter_pro: bin/video_converter_pro
+    build-packages:
+      - cmake
+      - ninja-build
+      - clang
+      - libgtk-3-dev
+      - liblzma-dev
+      - libstdc++-12-dev
+    stage-packages:
+      - libnotify4
+      - liblzma5
+    override-build: |
+      craftctl default
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      mkdir -p $CRAFT_PART_INSTALL/lib
+      mkdir -p $CRAFT_PART_INSTALL/data
+      mkdir -p $CRAFT_PART_INSTALL/meta/gui
+      mkdir -p $CRAFT_PART_INSTALL/usr/share/metainfo
+
+      # Build the Flutter app with system Flutter
+      FLUTTER=$HOME/flutter/bin/flutter
+      $FLUTTER build linux --release
+
+      # Copy binaries
+      cp build/linux/x64/release/bundle/video_converter_pro $CRAFT_PART_INSTALL/bin/
+      cp -r build/linux/x64/release/bundle/lib/* $CRAFT_PART_INSTALL/lib/
+
+      # Copy assets
+      cp -r build/linux/x64/release/bundle/data/* $CRAFT_PART_INSTALL/data/
+
+      # Copy desktop file and icon
+      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.desktop $CRAFT_PART_INSTALL/meta/gui/
+      cp $CRAFT_PART_SRC/assets/icons/icon.png $CRAFT_PART_INSTALL/meta/gui/
+
+      # Copy metainfo
+      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.metainfo.xml $CRAFT_PART_INSTALL/usr/share/metainfo/

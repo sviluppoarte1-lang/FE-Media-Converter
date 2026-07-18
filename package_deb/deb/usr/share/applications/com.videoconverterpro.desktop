@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FE MEDIA CONVERTER
+Name[en]=FE MEDIA CONVERTER
+Name[it]=FE MEDIA CONVERTER
+Comment=Professional video, audio and image conversion application
+Comment[en]=Professional video, audio and image conversion application
+Comment[it]=Applicazione professionale per conversione video, audio e immagini
+Exec=video_converter_pro %F
+Icon=com.videoconverterpro
+Terminal=false
+Categories=AudioVideo;Video;Audio;Graphics;
+MimeType=video/*;audio/*;image/*;
+StartupNotify=true
+StartupWMClass=video_converter_pro
+Keywords=video;audio;image;converter;ffmpeg;media;
+URL=https://github.com/sviluppoarte1-lang/Fe-Media-Converter

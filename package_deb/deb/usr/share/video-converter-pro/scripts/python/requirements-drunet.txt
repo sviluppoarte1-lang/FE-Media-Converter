@@ -1,0 +1,5 @@
+numpy>=1.21
+opencv-python-headless>=4.5
+# PyTorch: on Linux x86_64, pip usually resolves CUDA wheels from PyPI. On macOS (no NVIDIA CUDA)
+# or for a specific CUDA toolkit build, use https://pytorch.org or conda inside this venv.
+torch>=2.0

@@ -8,7 +8,18 @@ import 'package:video_converter_pro/models/media_type.dart';
 import 'package:video_converter_pro/services/video_pre_processor.dart';
 import 'package:video_converter_pro/services/image_upscaler_service.dart';
 import 'package:video_converter_pro/services/video_upscaler_service.dart';
+import 'package:video_converter_pro/services/models_manager_service.dart';
+import 'package:video_converter_pro/services/drunet_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/processing_fps_sanitize.dart';
+import 'package:path/path.dart' as p;
+
+/// Optional [processingFps]: video frames processed per second when FFmpeg reports it.
+typedef MediaConvertOnProgress = void Function(
+  double progress,
+  String timeRemaining, {
+  double? processingFps,
+});
 
 /// Estrae 1–2 righe significative dallo stderr FFmpeg (esclude banner build).
 String _ffmpegStderrSnippet(String stderr, {int maxLen = 450}) {
@@ -31,6 +42,89 @@ String _appendFfmpegDetail(String userMessage, String stderr) {
   final sn = _ffmpegStderrSnippet(stderr);
   if (sn.isEmpty) return userMessage;
   return '$userMessage\n$sn';
+}
+
+String _progressLabel(String key) {
+  final lang = Platform.localeName.toLowerCase();
+  final isIt = lang.startsWith('it');
+  final isEs = lang.startsWith('es');
+  final isFr = lang.startsWith('fr');
+  final isDe = lang.startsWith('de');
+  final isPt = lang.startsWith('pt');
+  switch (key) {
+    case 'preparing':
+      if (isIt) return 'Preparazione...';
+      if (isEs) return 'Preparando...';
+      if (isFr) return 'Preparation...';
+      if (isDe) return 'Vorbereitung...';
+      if (isPt) return 'Preparando...';
+      return 'Preparing...';
+    case 'remaining':
+      if (isIt) return 'Restante';
+      if (isEs) return 'Restante';
+      if (isFr) return 'Restant';
+      if (isDe) return 'Verbleibend';
+      if (isPt) return 'Restante';
+      return 'Remaining';
+    case 'completed':
+      if (isIt) return 'Completato';
+      if (isEs) return 'Completado';
+      if (isFr) return 'Termine';
+      if (isDe) return 'Abgeschlossen';
+      if (isPt) return 'Concluido';
+      return 'Completed';
+    case 'analyzing':
+      if (isIt) return 'Analisi video in corso...';
+      if (isEs) return 'Analizando video...';
+      if (isFr) return 'Analyse vidéo en cours...';
+      if (isDe) return 'Video wird analysiert...';
+      if (isPt) return 'Analisando vídeo...';
+      return 'Analyzing video...';
+    case 'checking_acceleration':
+      if (isIt) return 'Verifica accelerazione GPU/filtri...';
+      if (isEs) return 'Comprobando aceleración GPU/filtros...';
+      if (isFr) return 'Vérification accélération GPU/filtres...';
+      if (isDe) return 'GPU/Filter-Beschleunigung wird geprüft...';
+      if (isPt) return 'Verificando aceleração GPU/filtros...';
+      return 'Checking GPU/filter acceleration...';
+    case 'drunet_checking':
+      if (isIt) return 'DRUNet: controllo dipendenze e modello...';
+      if (isEs) return 'DRUNet: comprobando dependencias y modelo...';
+      if (isFr) return 'DRUNet : vérification dépendances et modèle...';
+      if (isDe) return 'DRUNet: Abhängigkeiten und Modell werden geprüft...';
+      if (isPt) return 'DRUNet: verificando dependências e modelo...';
+      return 'DRUNet: checking dependencies and model...';
+    case 'drunet_extract':
+      if (isIt) return 'DRUNet: estrazione frame...';
+      if (isEs) return 'DRUNet: extrayendo fotogramas...';
+      if (isFr) return 'DRUNet : extraction des images...';
+      if (isDe) return 'DRUNet: Frames werden extrahiert...';
+      if (isPt) return 'DRUNet: extraindo frames...';
+      return 'DRUNet: extracting frames...';
+    case 'drunet_denoise':
+      if (isIt) return 'DRUNet: denoise AI in corso (può richiedere tempo)...';
+      if (isEs) return 'DRUNet: denoise IA en curso (puede tardar)...';
+      if (isFr) return 'DRUNet : débruitage IA en cours (peut prendre du temps)...';
+      if (isDe) return 'DRUNet: KI-Entrauschen läuft (kann dauern)...';
+      if (isPt) return 'DRUNet: denoise IA em andamento (pode demorar)...';
+      return 'DRUNet: AI denoising in progress (may take time)...';
+    case 'drunet_remux':
+      if (isIt) return 'DRUNet: ricostruzione video...';
+      if (isEs) return 'DRUNet: reconstruyendo vídeo...';
+      if (isFr) return 'DRUNet : reconstruction vidéo...';
+      if (isDe) return 'DRUNet: Video wird neu aufgebaut...';
+      if (isPt) return 'DRUNet: reconstruindo vídeo...';
+      return 'DRUNet: rebuilding video...';
+    case 'drunet_done':
+      if (isIt) return 'DRUNet pre-pass completato, avvio encoding...';
+      if (isEs) return 'Pre-pass DRUNet completado, iniciando codificación...';
+      if (isFr) return 'Pré-passe DRUNet terminée, démarrage encodage...';
+      if (isDe) return 'DRUNet-Vorlauf abgeschlossen, Encoding startet...';
+      if (isPt) return 'Pré-pass DRUNet concluído, iniciando codificação...';
+      return 'DRUNet pre-pass completed, starting encoding...';
+    default:
+      return key;
+  }
 }
 
 /// Avvisi NVDEC/CUDA ripristinabili (FFmpeg può continuare in software).
@@ -66,6 +160,20 @@ bool _stderrSuggestsVideoFilterChainFailure(String stderr) {
   return false;
 }
 
+enum _EncodePolicy { speed, balanced, quality }
+
+bool _stderrSuggestsUnsupportedHwEncoderOption(String stderr) {
+  final s = stderr.toLowerCase();
+  return s.contains('unrecognized option') ||
+      s.contains('option not found') ||
+      s.contains('error setting option') ||
+      s.contains('cannot parse option') ||
+      s.contains('invalid value') ||
+      s.contains('unknown option') ||
+      s.contains('unsupported option') ||
+      s.contains('cannot set option');
+}
+
 class FFmpegService {
   final Map<String, Process> _activeProcesses = {};
   final Map<String, StreamSubscription> _outputSubscriptions = {};
@@ -75,15 +183,39 @@ class FFmpegService {
   bool _gpuChecked = false;
   final ImageUpscalerService _imageUpscaler = ImageUpscalerService();
   late final VideoUpscalerService _videoUpscaler;
+  Future<void>? _capabilityWarmup;
+
+  FFmpegService() {
+    _videoUpscaler = VideoUpscalerService(this);
+    // Preload FFmpeg filter/GPU capabilities early to reduce first-conversion latency.
+    _capabilityWarmup = _warmupCapabilities();
+  }
+
+  Future<void> _warmupCapabilities() async {
+    try {
+      await _checkAvailableFilters();
+      await _checkGpuAcceleration();
+    } catch (e) {
+      appLog('⚠️ [FFmpegService] Warmup capabilities failed: $e');
+    }
+  }
+
+  String _estimateDrunetSoftEtaLabel(String inputPath) {
+    try {
+      final file = File(inputPath);
+      final sizeMb = (file.lengthSync() / (1024 * 1024)).clamp(1, 50000).toDouble();
+      // Heuristic: pre-pass DRUNet can vary a lot by GPU/CPU; provide a soft range.
+      final minMinutes = (sizeMb / 120).clamp(1, 90).round();
+      final maxMinutes = (sizeMb / 35).clamp(minMinutes + 1, 240).round();
+      return '$minMinutes-$maxMinutes min';
+    } catch (_) {
+      return '2-15 min';
+    }
+  }
   
   Completer<void>? _filtersCheckCompleter;
   Completer<void>? _gpuCheckCompleter;
   
-  FFmpegService() {
-    _videoUpscaler = VideoUpscalerService(this);
-  }
-
-
   Future<Map<String, dynamic>> convertMedia({
     required String taskId,
     required String inputPath,
@@ -101,29 +233,35 @@ class FFmpegService {
     required int cpuThreads,
     required bool useGpu,
     required String gpuType,
-    required void Function(double progress, String timeRemaining) onProgress,
+    required MediaConvertOnProgress onProgress,
     bool overwriteExisting = false,
     bool extractAudioFromVideo = false,
   }) async {
+    String? drunetTempPath;
     try {
       appLog('🔧 [FFmpegService] Starting conversion for task: $taskId');
       appLog('📁 Input: $inputPath');
       appLog('📁 Output: $outputPath');
       appLog('🎬 Media Type: $mediaType');
+      onProgress(0.01, 'phase.preparing');
 
       Map<String, dynamic>? videoAnalysis;
-      if (mediaType == MediaType.video) {
+      final runBlockingPreAnalysis =
+          mediaType == MediaType.video &&
+          Platform.environment['FE_ENABLE_PRE_ANALYSIS'] == '1';
+      if (runBlockingPreAnalysis) {
+        onProgress(0.02, 'phase.analyzing');
         appLog('🔍 [FFmpegService] Eseguendo analisi video pre-rendering...');
-        appLog('   → Analisi luminosità e contrasto in corso (timeout: 20s)...');
+        appLog('   → Analisi luminosità e contrasto in corso (timeout: 4s)...');
         try {
           videoAnalysis = await VideoPreProcessor.analyzeVideoQuality(inputPath)
               .timeout(
-                const Duration(seconds: 20),
+                const Duration(seconds: 4),
                 onTimeout: () {
-                  appLog('⚠️ [FFmpegService] Timeout analisi video (20s) - continuo senza correzioni automatiche');
+                  appLog('⚠️ [FFmpegService] Timeout analisi video (4s) - continuo senza correzioni automatiche');
                   return {
                     'success': false,
-                    'error': 'Analisi timeout dopo 20 secondi',
+                    'error': 'Analisi timeout dopo 4 secondi',
                     'quality_issues': [],
                     'recommendations': []
                   };
@@ -169,18 +307,11 @@ class FFmpegService {
           appLog('⚠️ [FFmpegService] Analisi video fallita: ${videoAnalysis['error']}');
           appLog('   → Continuo senza correzioni automatiche');
         }
+      } else if (mediaType == MediaType.video) {
+        appLog('⚡ [FFmpegService] Pre-analisi video bloccante disabilitata (FE_ENABLE_PRE_ANALYSIS != 1)');
       }
 
-      final conversionInputPath = inputPath;
-
-      if (mediaType == MediaType.video && videoFilters.enableDRUNetDenoising) {
-        appLog(
-          '🧠 [FFmpegService] Opzione DRUNet attiva nei filtri: assicurati che '
-          'models/drunet/drunet_model.pth esista (download automatico all’avvio se mancante) '
-          'e il venv Python con torch. La conversione FFmpeg non fallisce se DRUNet è solo '
-          'segnalato in analisi: errori DRUNet compaiono solo se usi script frame-by-frame.',
-        );
-      }
+      var conversionInputPath = inputPath;
 
       final inputValidation = await _validateInputFile(conversionInputPath);
       if (!inputValidation['success']) {
@@ -203,8 +334,103 @@ class FFmpegService {
       final sanitizedOutputPath = outputValidation['sanitized_path']!;
       appLog('✅ Output path sanitized: $sanitizedOutputPath');
 
+      final audioExtRegexEarly = RegExp(
+        r'\.(mp3|wav|aac|flac|ogg|m4a|wma|opus)$',
+        caseSensitive: false,
+      );
+      final videoExtRegexEarly = RegExp(
+        r'\.(mp4|avi|mkv|mov|wmv|flv|webm|m4v|3gp|ts|mts|m2ts)$',
+        caseSensitive: false,
+      );
+      final isAudioExtraction = (mediaType == MediaType.video &&
+              (extractAudioFromVideo || audioExtRegexEarly.hasMatch(sanitizedOutputPath))) ||
+          (mediaType == MediaType.audio &&
+              videoExtRegexEarly.hasMatch(conversionInputPath));
+
+      await (_capabilityWarmup ?? Future<void>.value());
+      onProgress(0.04, 'phase.checking_acceleration');
       await _checkAvailableFilters();
       await _checkGpuAcceleration();
+
+      if (mediaType == MediaType.video &&
+          videoFilters.enableDRUNetDenoising &&
+          !isAudioExtraction) {
+        onProgress(0.05, 'phase.drunet.checking');
+        var drDeps = await DRUNetService.checkDependencies();
+        if (!drDeps) {
+          onProgress(0.055, 'phase.drunet.installing');
+          final depInstall = await DRUNetService.installDependencies(
+            onProgress: (_) {},
+          );
+          drDeps = depInstall['success'] == true;
+          if (drDeps) {
+            onProgress(0.058, 'phase.drunet.install_done');
+          } else {
+            appLog('⚠️ [FFmpegService] DRUNet auto dependency setup failed: ${depInstall['error']}');
+          }
+        }
+        if (drDeps) {
+          final etaSoft = _estimateDrunetSoftEtaLabel(conversionInputPath);
+          onProgress(0.055, 'phase.drunet_eta:$etaSoft');
+          String? mp;
+          final modelReady = await ModelsManagerService.isDRUNetModelReady();
+          if (modelReady) {
+            final st = await ModelsManagerService.getModelsStatus();
+            final dr = st['drunet'] as Map<String, dynamic>?;
+            mp = dr?['path'] as String?;
+          }
+          final drOutPath = p.join(
+            Directory.systemTemp.path,
+            'fe_drunet_$taskId${DateTime.now().millisecondsSinceEpoch}.mkv',
+          );
+          drunetTempPath = drOutPath;
+          final drResult = await DRUNetService.denoiseVideoFull(
+            inputVideo: conversionInputPath,
+            outputVideo: drOutPath,
+            noiseLevel: videoFilters.drunetNoiseLevel,
+            modelPath: mp,
+            device: videoFilters.drunetDevice,
+            onProgress: (p, {processingFps}) {
+              final mapped = (0.06 + (p.clamp(0.0, 1.0) * 0.26)).clamp(0.06, 0.32);
+              if (p < 0.15) {
+                onProgress(mapped, 'phase.drunet.extract', processingFps: processingFps);
+              } else if (p < 0.75) {
+                onProgress(mapped, 'phase.drunet.denoise', processingFps: processingFps);
+              } else if (p < 1.0) {
+                onProgress(mapped, 'phase.drunet.remux', processingFps: processingFps);
+              } else {
+                onProgress(mapped, 'phase.drunet.done', processingFps: processingFps);
+              }
+            },
+          );
+          if (drResult['success'] == true && drResult['output_path'] != null) {
+            conversionInputPath = drResult['output_path'] as String;
+            appLog('🧠 [FFmpegService] DRUNet pre-pass completato → input temporaneo');
+          } else {
+            appLog(
+              '⚠️ [FFmpegService] DRUNet pre-pass saltato: ${drResult['error'] ?? 'unknown'}',
+            );
+            try {
+              final f = File(drOutPath);
+              if (f.existsSync()) await f.delete();
+            } catch (_) {}
+            drunetTempPath = null;
+          }
+        } else {
+          onProgress(0.06, 'phase.drunet.not_available');
+          appLog(
+            '⚠️ [FFmpegService] DRUNet: assicurati che scripts/python/drunet_denoiser.py esista '
+            'e che numpy/opencv siano installati (es. scripts/python/setup_python_env.sh)',
+          );
+        }
+      }
+
+      final drunetPrepassApplied =
+          drunetTempPath != null && conversionInputPath != inputPath;
+      var encodeFilters = videoFilters;
+      if (drunetPrepassApplied) {
+        encodeFilters = videoFilters.copyWith(enableDRUNetDenoising: false);
+      }
 
       String effectiveGpuType = gpuType;
       if (gpuType == 'auto' && _availableGpuAccelerations != null) {
@@ -215,15 +441,17 @@ class FFmpegService {
         }
       }
       
-      VideoFilters effectiveFilters = videoFilters;
-      if (videoFilters.gpuVendor == 'auto' && effectiveGpuType != 'auto' && effectiveGpuType != 'none') {
-        effectiveFilters = videoFilters.copyWith(gpuVendor: effectiveGpuType);
+      VideoFilters effectiveFilters = encodeFilters;
+      if (encodeFilters.gpuVendor == 'auto' && effectiveGpuType != 'auto' && effectiveGpuType != 'none') {
+        effectiveFilters = encodeFilters.copyWith(gpuVendor: effectiveGpuType);
       }
 
       List<String> command;
-      bool gpuAccelerationActive = false;
+      bool gpuHwAccelDecodeActive = false;
+      var useGpuEncodeVideo =
+          _shouldUseGpuVideoEncode(effectiveFilters, useGpu, mediaType, isAudioExtraction);
       int safeThreads = 0;
-      
+
       if (mediaType == MediaType.image) {
         command = ['ffmpeg', '-y', '-loglevel', 'warning'];
         safeThreads = _getSafeThreadCount(cpuThreads, false);
@@ -231,12 +459,15 @@ class FFmpegService {
           final gpuArgs = _getGpuAccelerationArgs(effectiveFilters, hasVideoFilters: false);
           if (gpuArgs.isNotEmpty) {
             command.addAll(gpuArgs);
-            gpuAccelerationActive = true;
+            gpuHwAccelDecodeActive = true;
           }
         }
         command.addAll(['-i', conversionInputPath]);
         command.addAll(['-threads', safeThreads.toString()]);
-        appLog('🖼️ Immagini: ${gpuAccelerationActive ? "GPU +" : ""} CPU (threads: $safeThreads)');
+        appLog(
+          '🖼️ Immagini: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"} '
+          '(threads: $safeThreads)',
+        );
       } else if (mediaType == MediaType.audio) {
         command = ['ffmpeg', '-y', '-loglevel', 'info'];
         command.addAll(['-analyzeduration', '10000000']);
@@ -244,40 +475,40 @@ class FFmpegService {
         command.addAll(['-i', conversionInputPath]);
         safeThreads = _getSafeThreadCount(cpuThreads, false);
         command.addAll(['-threads', safeThreads.toString()]);
-        gpuAccelerationActive = false;
+        useGpuEncodeVideo = false;
         appLog('🎵 Audio: CPU only (threads: $safeThreads, no GPU)');
       } else {
         command = ['ffmpeg', '-y', '-loglevel', 'info'];
         command.addAll(['-analyzeduration', '10000000']);
         command.addAll(['-probesize', '10000000']);
         command.addAll(['-fflags', '+genpts+igndts']);
-        final hasVideoFilters = effectiveFilters.hasActiveFilters || 
-            videoFilters.enableDetailEnhancement ||
-            videoFilters.denoiseStrength > 0 ||
-            videoFilters.sharpness != 1.0;
+        final hasVideoFilters = effectiveFilters.hasActiveFilters ||
+            effectiveFilters.enableDetailEnhancement ||
+            effectiveFilters.denoiseStrength > 0 ||
+            effectiveFilters.sharpness != 1.0;
         if (useGpu && effectiveFilters.enableGpuAcceleration) {
-          final gpuArgs = _getGpuAccelerationArgs(effectiveFilters, hasVideoFilters: hasVideoFilters);
+          final gpuArgs =
+              _getGpuAccelerationArgs(effectiveFilters, hasVideoFilters: hasVideoFilters);
           if (gpuArgs.isNotEmpty) {
             command.addAll(gpuArgs);
-            gpuAccelerationActive = true;
-            appLog('🎬 Video: GPU enabled (type: $effectiveGpuType)');
+            gpuHwAccelDecodeActive = true;
+            appLog('🎬 Video: hwaccel decode attivo ($effectiveGpuType)');
           }
         }
         command.addAll(['-i', conversionInputPath]);
-        safeThreads = _getSafeThreadCount(cpuThreads, gpuAccelerationActive);
+        safeThreads = _getSafeThreadCount(cpuThreads, useGpuEncodeVideo);
         command.addAll(['-threads', safeThreads.toString()]);
-        appLog('🎬 Video: ${gpuAccelerationActive ? "GPU" : "CPU"} (threads: $safeThreads)');
+        appLog(
+          '🎬 Video: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"}, '
+          'encode GPU=${useGpuEncodeVideo ? "yes" : "no"} (threads: $safeThreads)',
+        );
       }
 
       List<String> finalCommand;
-      final audioExtRegex = RegExp(r'\.(mp3|wav|aac|flac|ogg|m4a|wma|opus)$', caseSensitive: false);
-      final videoExtRegex = RegExp(r'\.(mp4|avi|mkv|mov|wmv|flv|webm|m4v|3gp|ts|mts|m2ts)$', caseSensitive: false);
-      final isAudioExtraction = (mediaType == MediaType.video && (extractAudioFromVideo || audioExtRegex.hasMatch(outputPath))) ||
-          (mediaType == MediaType.audio && videoExtRegex.hasMatch(conversionInputPath));
-      
+
       if (isAudioExtraction) {
         appLog('🎵 [FFmpegService] Estrazione audio da video - comando dedicato');
-        gpuAccelerationActive = false;
+        useGpuEncodeVideo = false;
         finalCommand = _buildAudioExtractionCommand(
           inputPath: conversionInputPath,
           outputPath: sanitizedOutputPath,
@@ -301,7 +532,7 @@ class FFmpegService {
               videoFilters: effectiveFilters,
               audioFilters: audioFilters,
               cpuThreads: safeThreads,
-              useGpu: gpuAccelerationActive,
+              useGpu: useGpuEncodeVideo,
               gpuType: effectiveGpuType,
               videoAnalysis: videoAnalysis,
             );
@@ -323,23 +554,53 @@ class FFmpegService {
               inputPath: inputPath,
               outputPath: sanitizedOutputPath,
               imageFilters: imageFilters,
-              onProgress: onProgress,
+              onProgress: (p, m) => onProgress(p, m),
             );
             break;
         }
       }
 
       appLog('⚡ Final FFmpeg command ready');
+      onProgress(0.33, 'phase.encoding_start');
 
-      return await _runFFmpegCommand(
+      final reportGpuUsed = switch (mediaType) {
+        MediaType.video => useGpuEncodeVideo && !isAudioExtraction,
+        MediaType.image => gpuHwAccelDecodeActive,
+        _ => false,
+      };
+
+      MediaConvertOnProgress encodeOnProgress = onProgress;
+      if (drunetPrepassApplied) {
+        encodeOnProgress = (progress, timeRemaining, {processingFps}) {
+          final mapped = 0.33 + progress.clamp(0.0, 1.0) * 0.67;
+          onProgress(mapped, timeRemaining, processingFps: processingFps);
+        };
+      }
+
+      try {
+        return await _runFFmpegCommand(
         taskId: taskId,
         command: finalCommand,
-        inputPath: inputPath,
+        inputPath: conversionInputPath,
         outputPath: sanitizedOutputPath,
-        onProgress: onProgress,
-        useGpu: gpuAccelerationActive,
+        onProgress: encodeOnProgress,
+        useGpu: reportGpuUsed,
       );
+      } finally {
+        if (drunetTempPath != null) {
+          try {
+            final f = File(drunetTempPath);
+            if (f.existsSync()) await f.delete();
+          } catch (_) {}
+        }
+      }
     } catch (e) {
+      if (drunetTempPath != null) {
+        try {
+          final f = File(drunetTempPath);
+          if (f.existsSync()) await f.delete();
+        } catch (_) {}
+      }
       appLog('💥 Critical error in convertMedia: $e');
       return {
         'success': false,
@@ -395,7 +656,12 @@ class FFmpegService {
     final optimizedVideoCodec = _getOptimizedVideoCodec(videoCodec, videoAnalysis, useGpu);
     command.addAll(['-c:v', optimizedVideoCodec]);
     
-    final hardwareCodecArgs = _getHardwareCodecOptions(optimizedVideoCodec, useGpu, videoFilters);
+    final hardwareCodecArgs = _getHardwareCodecOptions(
+      optimizedVideoCodec,
+      useGpu,
+      videoFilters,
+      videoAnalysis,
+    );
     command.addAll(hardwareCodecArgs);
 
     final optimizedQuality = _getOptimizedVideoQuality(videoQuality, videoBitrateMode, videoAnalysis);
@@ -477,11 +743,25 @@ class FFmpegService {
       command.addAll(['-bufsize', '${videoBitrate * 2}k']); // Buffer doppio del bitrate
     } else {
       command.addAll(['-thread_type', 'frame+slice']);
+      final cpuPolicy = _resolveEncodePolicy(
+        optimizedVideoCodec,
+        videoFilters,
+        videoAnalysis,
+      );
       if (optimizedVideoCodec == 'libx264') {
-        command.addAll(['-preset', 'medium']); // Bilanciato tra velocità e qualità
-        command.addAll(['-tune', 'film']); // Ottimizzato per video
+        final preset = switch (cpuPolicy) {
+          _EncodePolicy.speed => 'veryfast',
+          _EncodePolicy.balanced => 'faster',
+          _EncodePolicy.quality => 'medium',
+        };
+        command.addAll(['-preset', preset]);
       } else if (optimizedVideoCodec == 'libx265') {
-        command.addAll(['-preset', 'medium']);
+        final preset = switch (cpuPolicy) {
+          _EncodePolicy.speed => 'superfast',
+          _EncodePolicy.balanced => 'faster',
+          _EncodePolicy.quality => 'medium',
+        };
+        command.addAll(['-preset', preset]);
         final safeThreads = _getSafeThreadCount(cpuThreads, false);
         command.addAll(['-x265-params', 'threads=$safeThreads']);
       }
@@ -784,9 +1064,18 @@ class FFmpegService {
       if (_isFilterAvailable('minideen')) {
         final tempStrength = (filters.temporalDenoise * 0.5).clamp(0.1, 0.5);
         filtersList.add('minideen=radius=2:threshold=$tempStrength');
-        appLog('   → Adding temporal denoising (strength: $tempStrength)');
+        appLog('   → Adding temporal denoising (minideen, strength: $tempStrength)');
+      } else if (_isFilterAvailable('atadenoise')) {
+        final a = (0.02 + filters.temporalDenoise * 0.07).toStringAsFixed(3);
+        filtersList.add('atadenoise=$a:$a:$a');
+        appLog('   → Adding temporal denoising (atadenoise, plane thresholds: $a)');
       } else {
-        appLog('   ⚠️ Minideen not available, skipping temporal denoising');
+        final extra = (filters.temporalDenoise * 1.8).clamp(0.4, 3.5);
+        filtersList.add(
+          'hqdn3d=${extra.toStringAsFixed(2)}:${(extra * 0.65).toStringAsFixed(2)}:'
+          '${extra.toStringAsFixed(2)}:${(extra * 0.65).toStringAsFixed(2)}',
+        );
+        appLog('   → Temporal smoothing fallback (hqdn3d tail, strength ~$extra)');
       }
     }
 
@@ -1869,6 +2158,7 @@ class FFmpegService {
         'vaguedenoiser': output.contains('vaguedenoiser'),
         'hqdn3d': output.contains('hqdn3d'),
         'minideen': output.contains('minideen'),
+        'atadenoise': output.contains('atadenoise'),
         'gradfun': output.contains('gradfun'),
         'deblock': output.contains('deblock'),
         'unsharp': output.contains('unsharp'),
@@ -2093,6 +2383,42 @@ class FFmpegService {
     }
   }
 
+  bool _vendorHasHardwareVideoEncoder(String vendor) {
+    if (_availableGpuAccelerations == null) return false;
+    switch (vendor) {
+      case 'nvidia':
+        return _availableGpuAccelerations!['nvidia'] == true;
+      case 'intel':
+        return _availableGpuAccelerations!['intel'] == true;
+      case 'amd':
+        return _availableGpuAccelerations!['amd'] == true;
+      case 'apple':
+        return _availableGpuAccelerations!['apple'] == true;
+      case 'vaapi':
+        return _availableGpuAccelerations!['vaapi'] == true;
+      default:
+        return false;
+    }
+  }
+
+  /// Encode hardware (NVENC/QSV/AMF/…): indipendente dall’hwaccel decode.
+  bool _shouldUseGpuVideoEncode(
+    VideoFilters filters,
+    bool useGpuUser,
+    MediaType mediaType,
+    bool isAudioExtraction,
+  ) {
+    if (!useGpuUser || !filters.enableGpuAcceleration) return false;
+    if (mediaType != MediaType.video || isAudioExtraction) return false;
+    if (_availableGpuAccelerations == null || !_gpuChecked) return false;
+    var v = filters.gpuVendor;
+    if (v == 'auto') {
+      v = _availableGpuAccelerations!['detected_gpu'] as String? ?? 'none';
+    }
+    if (v == 'none') return false;
+    return _vendorHasHardwareVideoEncoder(v);
+  }
+
   /// Restituisce gli argomenti per l'accelerazione GPU COMPLETA.
   /// 
   /// Implementa tutti i parametri ottimizzati per accelerazione hardware:
@@ -2166,17 +2492,20 @@ class FFmpegService {
 
   int _getSafeThreadCount(int requestedThreads, bool usingGpu) {
     final platform = Platform.numberOfProcessors.clamp(1, 256);
+    final gpuSuggested = (platform / 2).round().clamp(2, 16);
     // 0 = automatico: usa tutti i logical processor (vecchi e nuovi CPU, laptop e workstation)
     if (requestedThreads == 0) {
+      final chosen = usingGpu ? gpuSuggested : platform;
       appLog(
-        '💻 Thread FFmpeg (-threads): $platform (tutti i logical processor; '
+        '💻 Thread FFmpeg (-threads): $chosen (tutti i logical processor; '
         'GPU encode: $usingGpu)',
       );
-      return platform;
+      return chosen;
     }
-    final capped = requestedThreads.clamp(1, platform);
+    final cappedMax = usingGpu ? gpuSuggested : platform;
+    final capped = requestedThreads.clamp(1, cappedMax);
     appLog(
-      '💻 Thread FFmpeg: $capped (richiesti: $requestedThreads, max: $platform)',
+      '💻 Thread FFmpeg: $capped (richiesti: $requestedThreads, max: $cappedMax)',
     );
     return capped;
   }
@@ -2200,7 +2529,7 @@ class FFmpegService {
     required bool useGpu,
     required String gpuType,
     required bool overwriteExisting,
-    required void Function(double progress, String timeRemaining) onProgress,
+    required MediaConvertOnProgress onProgress,
     bool extractAudioFromVideo = false,
   }) async {
     // Chiama il metodo normale di conversione con sovrascrittura abilitata
@@ -2232,8 +2561,9 @@ class FFmpegService {
     required List<String> command,
     required String inputPath,
     required String outputPath,
-    required void Function(double progress, String timeRemaining) onProgress,
+    required MediaConvertOnProgress onProgress,
     required bool useGpu,
+    int hardwareRetryStage = 0,
   }) async {
     Process? process;
     
@@ -2255,6 +2585,10 @@ class FFmpegService {
       final stdoutBuffer = StringBuffer();
       bool hasDuration = false;
       double duration = 0.0;
+      var lastEncTimeSec = 0.0;
+      var lastEncWall = DateTime.now();
+      var encTimeSampleStarted = false;
+      double? wallClockFps;
       // NON usare euristiche su stderr (es. "failed", "invalid" da NVDEC/CUDA):
       // FFmpeg le stampa anche quando ripiega su decode software e termina con exit 0.
 
@@ -2335,7 +2669,40 @@ class FFmpegService {
                           ? '${remHours.toString().padLeft(2, '0')}:${remMinutes.toString().padLeft(2, '0')}:${remSecs.toString().padLeft(2, '0')}'
                           : '${remMinutes.toString().padLeft(2, '0')}:${remSecs.toString().padLeft(2, '0')}';
 
-                      onProgress(progress, 'Restante ~ $etaString');
+                      final nowEnc = DateTime.now();
+                      if (!encTimeSampleStarted) {
+                        encTimeSampleStarted = true;
+                        lastEncTimeSec = currentTime;
+                        lastEncWall = nowEnc;
+                      } else {
+                        final wallDt = nowEnc.difference(lastEncWall).inMicroseconds / 1e6;
+                        final inst = ProcessingFpsSanitize.fromMediaTimeDelta(
+                          prevTimeSec: lastEncTimeSec,
+                          timeSec: currentTime,
+                          wallDtSec: wallDt,
+                        );
+                        if (inst != null) {
+                          wallClockFps = wallClockFps == null
+                              ? inst
+                              : (wallClockFps! * 0.75 + inst * 0.25);
+                        }
+                        lastEncTimeSec = currentTime;
+                        lastEncWall = nowEnc;
+                      }
+
+                      double? stderrFps;
+                      final fpsM = RegExp(r'\bfps=\s*([0-9]+(?:\.[0-9]+)?)').firstMatch(line);
+                      if (fpsM != null) {
+                        stderrFps = ProcessingFpsSanitize.fromReported(
+                          double.tryParse(fpsM.group(1)!),
+                        );
+                      }
+
+                        onProgress(
+                          progress,
+                          '${_progressLabel('remaining')} ~ $etaString',
+                          processingFps: stderrFps ?? wallClockFps,
+                        );
                     }
                   } catch (e) {
                     // Ignora errori di parsing progresso
@@ -2388,7 +2755,7 @@ class FFmpegService {
         if (await outputFile.exists()) {
           final stat = await outputFile.stat();
           if (stat.size > 0) {
-            onProgress(1.0, 'Completato');
+            onProgress(1.0, _progressLabel('completed'));
             return {
               'success': true,
               'outputPath': outputPath,
@@ -2414,6 +2781,60 @@ class FFmpegService {
           finalErrorMessage = 'FFmpeg fallito senza output di errore. Exit code: $exitCode';
           appLog('⚠️ [FFmpeg] Nessun output stderr, ma exit code = $exitCode');
           appLog('⚠️ [FFmpeg] Comando eseguito: ${command.join(" ")}');
+        }
+      }
+
+      if (hardwareRetryStage == 0 &&
+          useGpu &&
+          _stderrSuggestsUnsupportedHwEncoderOption(finalErrorMessage)) {
+        final safeCommand = _buildSafeHardwareRetryCommand(command);
+        if (!_commandsEquivalent(command, safeCommand)) {
+          appLog('⚠️ [FFmpeg] Retry safe hardware profile (unsupported HW option)');
+          return _runFFmpegCommand(
+            taskId: taskId,
+            command: safeCommand,
+            inputPath: inputPath,
+            outputPath: outputPath,
+            onProgress: onProgress,
+            useGpu: useGpu,
+            hardwareRetryStage: 1,
+          );
+        }
+      }
+
+      final looksLikeCodecIssue = finalErrorMessage.toLowerCase().contains('unknown encoder') ||
+          finalErrorMessage.toLowerCase().contains('encoder') ||
+          finalErrorMessage.toLowerCase().contains('codec');
+
+      if (hardwareRetryStage <= 1 && useGpu && looksLikeCodecIssue) {
+        final minimalGpuCommand = _buildMinimalGpuRetryCommand(command);
+        if (!_commandsEquivalent(command, minimalGpuCommand)) {
+          appLog('⚠️ [FFmpeg] Retry minimal GPU profile');
+          return _runFFmpegCommand(
+            taskId: taskId,
+            command: minimalGpuCommand,
+            inputPath: inputPath,
+            outputPath: outputPath,
+            onProgress: onProgress,
+            useGpu: true,
+            hardwareRetryStage: 2,
+          );
+        }
+      }
+
+      if (hardwareRetryStage <= 2 && useGpu && looksLikeCodecIssue) {
+        final cpuFallbackCommand = _buildCpuFallbackRetryCommand(command);
+        if (!_commandsEquivalent(command, cpuFallbackCommand)) {
+          appLog('⚠️ [FFmpeg] Retry CPU fallback profile');
+          return _runFFmpegCommand(
+            taskId: taskId,
+            command: cpuFallbackCommand,
+            inputPath: inputPath,
+            outputPath: outputPath,
+            onProgress: onProgress,
+            useGpu: false,
+            hardwareRetryStage: 3,
+          );
         }
       }
       
@@ -2542,50 +2963,43 @@ class FFmpegService {
   }
 
   /// Ottiene le opzioni ottimizzate per codec hardware
-  List<String> _getHardwareCodecOptions(String codec, bool useGpu, VideoFilters filters) {
+  List<String> _getHardwareCodecOptions(
+    String codec,
+    bool useGpu,
+    VideoFilters filters,
+    Map<String, dynamic>? analysis,
+  ) {
     final options = <String>[];
     
     if (!useGpu) return options;
     
-    // Preset per encoding (velocità vs qualità)
-    String preset = 'medium';
-    if (filters.gpuEncodingPreset != 'medium') {
-      preset = filters.gpuEncodingPreset;
-    }
+    final policy = _resolveEncodePolicy(codec, filters, analysis);
+    final preset = switch (policy) {
+      _EncodePolicy.speed => 'fast',
+      _EncodePolicy.balanced => 'medium',
+      _EncodePolicy.quality => 'high_quality',
+    };
     
     if (codec.contains('nvenc')) {
       // NVIDIA NVENC: OTTIMIZZAZIONI COMPLETE
       // Preset: p1 (fastest) a p7 (slowest/highest quality)
       final nvencPreset = _getNvencPreset(preset);
       options.addAll(['-preset', nvencPreset]);
-      options.addAll(['-rc', 'vbr']); // Variable bitrate
+      options.addAll(['-rc', preset == 'high_quality' ? 'vbr_hq' : 'vbr']);
       options.addAll(['-b_ref_mode', 'middle']); // B-frame reference mode
-      
-      // Lookahead per migliore qualità (sempre abilitato per qualità)
-      if (preset == 'high_quality' || preset == 'slow') {
-        options.addAll(['-rc-lookahead', '32']); // Max lookahead per qualità
-      } else if (preset == 'medium') {
-        options.addAll(['-rc-lookahead', '20']); // Lookahead moderato
+      if (policy == _EncodePolicy.quality) {
+        options.addAll(['-rc-lookahead', '24']);
+        options.addAll(['-temporal-aq', '1', '-spatial-aq', '1', '-aq-strength', '8']);
+        options.addAll(['-multipass', 'qres']);
+        options.addAll(['-bf', '3']);
+      } else if (policy == _EncodePolicy.balanced) {
+        options.addAll(['-rc-lookahead', '12']);
+        options.addAll(['-temporal-aq', '1', '-spatial-aq', '1', '-aq-strength', '6']);
+        options.addAll(['-bf', '2']);
       } else {
-        options.addAll(['-rc-lookahead', '8']); // Lookahead minimo per velocità
-      }
-
-      // AQ (Adaptive Quantization) - sempre abilitato per qualità
-      options.addAll(['-temporal-aq', '1']);
-      options.addAll(['-spatial-aq', '1']);
-      if (preset == 'high_quality' || preset == 'slow') {
-        options.addAll(['-aq-strength', '8']); // AQ più aggressivo
-      } else {
-        options.addAll(['-aq-strength', '5']); // AQ moderato
-      }
-      
-      // Multipass solo per alta qualità
-      if (preset == 'high_quality' || preset == 'slow') {
-        options.addAll(['-multipass', 'fullres']); // Full resolution multipass
-      }
-      
-      // Zero latency mode per velocità (disabilitato per qualità)
-      if (preset == 'fast') {
+        options.addAll(['-rc-lookahead', '0']);
+        options.addAll(['-temporal-aq', '0', '-spatial-aq', '0']);
+        options.addAll(['-bf', '2']);
         options.addAll(['-zerolatency', '1']);
       }
       
@@ -2593,25 +3007,27 @@ class FFmpegService {
       options.addAll(['-gpu', '0']);
       
       // Surfaces per parallelismo
-      options.addAll(['-surfaces', '64']); // Più surfaces = più parallelismo
+      options.addAll(['-surfaces', policy == _EncodePolicy.speed ? '32' : '48']);
       
     } else if (codec.contains('qsv')) {
       // Intel QSV: OTTIMIZZAZIONI COMPLETE
       final qsvPreset = _getQsvPreset(preset);
       options.addAll(['-preset', qsvPreset]);
-      options.addAll(['-global_quality', '23']); // Default quality
+      options.addAll(['-global_quality', policy == _EncodePolicy.quality ? '20' : '23']);
       
       // Look-ahead per migliore qualità
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-look_ahead', '1']);
-        options.addAll(['-look_ahead_depth', '40']); // Profondità lookahead
-      } else if (preset == 'medium') {
+        options.addAll(['-look_ahead_depth', '30']);
+      } else if (policy == _EncodePolicy.balanced) {
         options.addAll(['-look_ahead', '1']);
-        options.addAll(['-look_ahead_depth', '20']);
+        options.addAll(['-look_ahead_depth', '16']);
+      } else {
+        options.addAll(['-look_ahead', '0']);
       }
       
       // Trellis quantization per qualità
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-trellis', '1']);
       }
       
@@ -2619,7 +3035,7 @@ class FFmpegService {
       options.addAll(['-g', '250']); // GOP size
       
       // Async depth per parallelismo
-      options.addAll(['-async_depth', '4']);
+      options.addAll(['-async_depth', policy == _EncodePolicy.speed ? '6' : '4']);
       
     } else if (codec.contains('amf')) {
       // AMD AMF: OTTIMIZZAZIONI COMPLETE
@@ -2629,19 +3045,21 @@ class FFmpegService {
       options.addAll(['-usage', 'transcoding']); // Ottimizzato per transcoding
       
       // Pre-analysis per qualità
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-preanalysis', '1']);
         options.addAll(['-preanalysis_quality', 'high']);
-      } else if (preset == 'medium') {
+      } else if (policy == _EncodePolicy.balanced) {
         options.addAll(['-preanalysis', '1']);
         options.addAll(['-preanalysis_quality', 'medium']);
+      } else {
+        options.addAll(['-preanalysis', '0']);
       }
       
       // Enforce HRD per compatibilità
       options.addAll(['-enforce_hrd', '1']);
       
       // Maximum reference frames
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-ref', '4']); // Più reference frames
       } else {
         options.addAll(['-ref', '2']);
@@ -2654,9 +3072,9 @@ class FFmpegService {
       options.addAll(['-rc', 'vbr_peak']);
       
       // Quality preset
-      if (preset == 'high_quality') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-quality', 'balanced']);
-      } else if (preset == 'medium') {
+      } else if (policy == _EncodePolicy.balanced) {
         options.addAll(['-quality', 'speed']);
       } else {
         options.addAll(['-quality', 'speed']);
@@ -2665,9 +3083,9 @@ class FFmpegService {
     } else if (codec.contains('vaapi')) {
       // VAAPI: OTTIMIZZAZIONI COMPLETE
       // Quality level (18-28, più basso = migliore qualità)
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-qp', '18']); // Alta qualità
-      } else if (preset == 'medium') {
+      } else if (policy == _EncodePolicy.balanced) {
         options.addAll(['-qp', '23']); // Qualità media
       } else {
         options.addAll(['-qp', '26']); // Qualità veloce
@@ -2680,7 +3098,7 @@ class FFmpegService {
       options.addAll(['-rc_mode', 'VBR']); // Variable bitrate
       
       // Max frame size
-      if (preset == 'high_quality' || preset == 'slow') {
+      if (policy == _EncodePolicy.quality) {
         options.addAll(['-max_frame_size', '0']); // Nessun limite
       }
       
@@ -2689,7 +3107,7 @@ class FFmpegService {
       options.addAll(['-compression_level', vaapiPreset]);
       
       // Low power mode (disabilitato per qualità)
-      if (preset == 'fast') {
+      if (policy == _EncodePolicy.speed) {
         options.addAll(['-low_power', '1']);
       }
       
@@ -2700,6 +3118,127 @@ class FFmpegService {
     }
     
     return options;
+  }
+
+  bool _commandsEquivalent(List<String> a, List<String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  List<String> _buildSafeHardwareRetryCommand(List<String> original) {
+    final dropWithValue = <String>{
+      '-preset',
+      '-rc',
+      '-rc-lookahead',
+      '-temporal-aq',
+      '-spatial-aq',
+      '-aq-strength',
+      '-multipass',
+      '-b_ref_mode',
+      '-surfaces',
+      '-look_ahead',
+      '-look_ahead_depth',
+      '-trellis',
+      '-async_depth',
+      '-preanalysis',
+      '-preanalysis_quality',
+      '-enforce_hrd',
+      '-ref',
+      '-bf',
+      '-rc_mode',
+      '-compression_level',
+      '-low_power',
+      '-max_frame_size',
+      '-usage',
+      '-quality',
+      '-zerolatency',
+      '-gpu',
+      '-global_quality',
+      '-qp',
+      '-realtime',
+      '-allow_sw',
+    };
+    final out = <String>[];
+    for (var i = 0; i < original.length; i++) {
+      final token = original[i];
+      if (dropWithValue.contains(token)) {
+        i += 1;
+        continue;
+      }
+      out.add(token);
+    }
+    return out;
+  }
+
+  List<String> _buildMinimalGpuRetryCommand(List<String> original) {
+    final out = _buildSafeHardwareRetryCommand(original);
+    final cidx = out.indexOf('-c:v');
+    if (cidx >= 0 && cidx + 1 < out.length) {
+      final current = out[cidx + 1];
+      if (current.contains('nvenc')) {
+        out[cidx + 1] = 'h264_nvenc';
+      } else if (current.contains('qsv')) {
+        out[cidx + 1] = 'h264_qsv';
+      } else if (current.contains('amf')) {
+        out[cidx + 1] = 'h264_amf';
+      } else if (current.contains('vaapi')) {
+        out[cidx + 1] = 'h264_vaapi';
+      }
+    }
+    return out;
+  }
+
+  List<String> _buildCpuFallbackRetryCommand(List<String> original) {
+    final out = <String>[];
+    for (var i = 0; i < original.length; i++) {
+      final t = original[i];
+      if (t == '-c:v') {
+        out.add(t);
+        out.add('libx264');
+        i += 1;
+        continue;
+      }
+      out.add(t);
+    }
+    return _buildSafeHardwareRetryCommand(out);
+  }
+
+  _EncodePolicy _resolveEncodePolicy(
+    String codec,
+    VideoFilters filters,
+    Map<String, dynamic>? analysis,
+  ) {
+    if (filters.gpuEncodingPreset == 'fast') return _EncodePolicy.speed;
+    if (filters.gpuEncodingPreset == 'high_quality') return _EncodePolicy.quality;
+    if (filters.gpuEncodingPreset == 'slow') return _EncodePolicy.quality;
+
+    // Auto policy (default when preset == medium): push speed on heavy pipelines.
+    // DRUNet is a Python pre-pass, not FFmpeg filter load; do not force NVENC speed for it.
+    final heavyFilters = filters.hasActiveFilters ||
+        filters.advancedDenoiseMethod == 'nlmeans' ||
+        filters.superResolutionMethod != 'none' ||
+        filters.temporalDenoise > 0.45;
+    final heavyAnalysis = analysis?['needs_advanced_processing'] == true ||
+        analysis?['quality_issues']?.contains('heavy_compression') == true;
+    if (heavyFilters || heavyAnalysis) {
+      appLog('⚡ Auto policy: SPEED (heavy filter chain detected)');
+      return _EncodePolicy.speed;
+    }
+
+    final highDetailSource =
+        analysis?['quality_issues']?.contains('low_bitrate') == true ||
+        analysis?['quality_issues']?.contains('old_codec') == true;
+    if (highDetailSource && !codec.contains('av1')) {
+      appLog('🎯 Auto policy: QUALITY (source needs cleanup)');
+      return _EncodePolicy.quality;
+    }
+
+    appLog('⚖️ Auto policy: BALANCED');
+    return _EncodePolicy.balanced;
   }
   
   String _getNvencPreset(String preset) {

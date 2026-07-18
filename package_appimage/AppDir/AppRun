@@ -1,0 +1,26 @@
+#!/bin/bash
+# AppRun script for Ultimate Video Converter Pro
+
+# Ottieni directory AppImage
+APPDIR="$(dirname "$(readlink -f "${0}")")"
+export PATH="$APPDIR/usr/bin:$PATH"
+export LD_LIBRARY_PATH="$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+
+# Imposta variabili d'ambiente per Flutter
+export FLUTTER_ROOT="$APPDIR/usr/share/com.marcodigiangiacomo.video_converter_pro"
+export APPIMAGE="$APPDIR"
+
+# Fix per Wayland e NVIDIA
+if [ -n "$WAYLAND_DISPLAY" ] && [ "$GDK_BACKEND" != "x11" ]; then
+    export GDK_BACKEND=x11
+fi
+
+# Fix per driver NVIDIA 580/590
+if command -v nvidia-smi &> /dev/null; then
+    export __GL_SYNC_TO_VBLANK=0
+    export __GL_THREADED_OPTIMIZATIONS=0
+    export __GL_ALLOW_UNOFFICIAL_PROTOCOL=0
+fi
+
+# Esegui applicazione
+exec "$APPDIR/usr/share/com.marcodigiangiacomo.video_converter_pro/video_converter_pro" "$@"

@@ -1,0 +1,18 @@
+Package: video-converter-pro
+Version: 2.0.2-1
+Architecture: amd64
+Maintainer: Marco Di Giangiacomo <marco@example.com>
+Description: Un'applicazione professionale per conversione video, audio e immagini
+ Interfaccia desktop per FFmpeg: conversioni in coda, codec (H.264/HEVC/VP9/AV1,
+ AAC/MP3/Opus…), filtri video/audio, accelerazione GPU opzionale, denoising DRUNet
+ e analisi scene (PySceneDetect). Le librerie Python pesanti per le funzioni AI
+ opzionali si installano al primo avvio dell'app (finestra di avanzamento), non
+ durante dpkg install.
+ .
+ Include metadati AppStream per GNOME Software (descrizione estesa e funzionalità).
+Depends: libgtk-3-0, libglib2.0-0, ffmpeg, python3, python3-pip
+Recommends: python3-venv
+Section: video
+Priority: optional
+Homepage: https://github.com/sviluppoarte1-lang/Fe-Media-Converter
+Installed-Size: 43932

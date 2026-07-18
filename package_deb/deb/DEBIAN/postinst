@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+APP_DIR="/usr/share/video-converter-pro"
+PYTHON_DIR="$APP_DIR/scripts/python"
+SETUP_SCRIPT="$PYTHON_DIR/setup_python_env.sh"
+
+# Aggiorna database desktop
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database
+fi
+
+# Aggiorna database icone
+if command -v update-icon-caches &> /dev/null; then
+    update-icon-caches /usr/share/icons/hicolor || true
+fi
+
+# Rendi eseguibili gli script Python
+if [ -f "$SETUP_SCRIPT" ]; then
+    chmod +x "$SETUP_SCRIPT"
+fi
+for script in "$PYTHON_DIR"/*.py; do
+    [ -f "$script" ] && chmod +x "$script"
+done
+
+# Ambiente Python (venv + PyTorch, ecc.): non eseguito qui — l'app propone
+# download/install al primo avvio con dialog di avanzamento.
+
+echo "FE Media Converter installato. Avvia l'app per eventuale setup Python opzionale."
+
+exit 0
