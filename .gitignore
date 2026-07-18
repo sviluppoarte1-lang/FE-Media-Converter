@@ -56,3 +56,9 @@ __pycache__/
 
 # Ignora i modelli AI pesanti (file .pth)
 *.pth
+
+# Snap build artifacts
+snap-build/
+parts/
+*.snap
+snapcraft-fe-media-converter*.txt*
