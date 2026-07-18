@@ -1,0 +1,4 @@
+numpy>=1.21
+opencv-python-headless>=4.5
+# PyTorch: for NVIDIA CUDA, install the wheel from https://pytorch.org (pip defaults to CPU-only).
+torch>=2.0

@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ultimate Video Converter Pro
+Name[en]=Ultimate Video Converter Pro
+Name[it]=Ultimate Video Converter Pro
+Comment=Professional video, audio and image conversion application
+Comment[en]=Professional video, audio and image conversion application
+Comment[it]=Applicazione professionale per conversione video, audio e immagini
+Exec=video_converter_pro %F
+Icon=video-converter-pro
+Terminal=false
+Categories=AudioVideo;Video;Audio;Graphics;
+MimeType=video/*;audio/*;image/*;
+StartupNotify=true
+Keywords=video;audio;image;converter;ffmpeg;media;
