@@ -11,15 +11,12 @@ description: |
   Key capabilities:
   - Video, audio, and image modes with format presets and codec selection
     (e.g. H.264, HEVC, VP9, AV1, AAC, MP3, Opus, PNG, WebP).
-  - Quality controls: constant quality (CRF) or target bitrate, plus per-mode
-    defaults you can persist.
-  - Queue with pause, resume, stop, and concurrent jobs; optional default output
-    folder and "same as input".
+  - Quality controls: constant quality (CRF) or target bitrate.
+  - Queue with pause, resume, stop, and concurrent jobs.
   - Drag-and-drop and multi-file selection.
-  - Advanced video filters: noise reduction, color correction, stabilization,
-    deinterlacing, color profiles, GPU-oriented presets when enabled.
+  - Advanced video filters: noise reduction, color correction, stabilization.
   - Optional DRUNet AI denoising and PySceneDetect-based scene analysis.
-  - Audio tools: volume, dynamics, EQ presets, noise reduction, reverb.
+  - Audio tools: volume, dynamics, EQ presets, noise reduction.
   - Image pipeline: filters, optional super-resolution / upscaling.
   - Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT).
   - Integrated FFmpeg dependency check with guided install.
@@ -65,11 +62,12 @@ parts:
     stage-packages:
       - libnotify4
       - liblzma5
+    organize:
+      usr/share/applications/com.videoconverterpro.desktop: meta/gui/com.videoconverterpro.desktop
+      usr/share/icons/com.videoconverterpro.png: meta/gui/icon.png
     override-build: |
       craftctl default
       install -Dm644 "$CRAFT_PART_SRC/assets/icons/icon.png" \
-        "$CRAFT_PART_INSTALL/meta/gui/icon.png"
+        "$CRAFT_PART_INSTALL/usr/share/icons/com.videoconverterpro.png"
       install -Dm644 "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" \
-        "$CRAFT_PART_INSTALL/meta/gui/com.videoconverterpro.desktop"
-    parse-info:
-      - usr/share/metainfo/com.videoconverterpro.metainfo.xml
+        "$CRAFT_PART_INSTALL/usr/share/applications/com.videoconverterpro.desktop"
