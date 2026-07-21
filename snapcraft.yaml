@@ -32,7 +32,8 @@ architectures:
 apps:
   fe-media-converter:
     command: video_converter_pro
-    desktop: meta/gui/com.videoconverterpro.desktop
+    extensions: [gnome]
+    desktop: com.videoconverterpro.desktop
     environment:
       TMPDIR: $XDG_RUNTIME_DIR
     plugs:
@@ -70,3 +71,5 @@ parts:
         "$CRAFT_PART_INSTALL/meta/gui/icon.png"
       install -Dm644 "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" \
         "$CRAFT_PART_INSTALL/meta/gui/com.videoconverterpro.desktop"
+    parse-info:
+      - usr/share/metainfo/com.videoconverterpro.metainfo.xml
