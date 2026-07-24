@@ -63,8 +63,8 @@ parts:
       - libnotify4
       - liblzma5
     organize:
-      usr/share/applications/com.videoconverterpro.desktop: meta/gui/com.videoconverterpro.desktop
-      usr/share/icons/com.videoconverterpro.png: meta/gui/icon.png
+      meta/gui/com.videoconverterpro.desktop: usr/share/applications/com.videoconverterpro.desktop
+      meta/gui/icon.png: usr/share/icons/com.videoconverterpro.png
     override-build: |
       craftctl default
       install -Dm644 "$CRAFT_PART_SRC/assets/icons/icon.png" \
