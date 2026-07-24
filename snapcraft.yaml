@@ -62,12 +62,10 @@ parts:
     stage-packages:
       - libnotify4
       - liblzma5
-    organize:
-      meta/gui/com.videoconverterpro.desktop: usr/share/applications/com.videoconverterpro.desktop
-      meta/gui/icon.png: usr/share/icons/com.videoconverterpro.png
     override-build: |
       craftctl default
-      install -Dm644 "$CRAFT_PART_SRC/assets/icons/icon.png" \
-        "$CRAFT_PART_INSTALL/usr/share/icons/com.videoconverterpro.png"
-      install -Dm644 "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" \
-        "$CRAFT_PART_INSTALL/usr/share/applications/com.videoconverterpro.desktop"
+    override-prime: |
+      craftctl default
+      mkdir -p $SNAPCRAFT_PRIME/meta/gui
+      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.desktop $SNAPCRAFT_PRIME/meta/gui/com.videoconverterpro.desktop
+      cp $CRAFT_PART_SRC/assets/icons/icon.png $SNAPCRAFT_PRIME/meta/gui/icon.png
