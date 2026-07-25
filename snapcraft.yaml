@@ -62,8 +62,18 @@ parts:
     stage-packages:
       - libnotify4
       - liblzma5
-    override-build: |
+  desktop-files:
+    plugin: dump
+    source: .
+    organize:
+      meta/gui/com.videoconverterpro.desktop: linux/com.videoconverterpro.desktop
+      meta/gui/icon.png: assets/icons/icon.png
+    stage:
+      - meta/gui/com.videoconverterpro.desktop
+      - meta/gui/icon.png
+  gnome/sdk:
+    override-prime: |
       craftctl default
-      mkdir -p $CRAFT_PART_INSTALL/meta/gui
-      cp "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" "$CRAFT_PART_INSTALL/meta/gui/com.videoconverterpro.desktop"
-      cp "$CRAFT_PART_SRC/assets/icons/icon.png" "$CRAFT_PART_INSTALL/meta/gui/icon.png"
+      mkdir -p $SNAPCRAFT_PRIME/meta/gui
+      cp $SNAPCRAFT_STAGE/meta/gui/com.videoconverterpro.desktop $SNAPCRAFT_PRIME/meta/gui/
+      cp $SNAPCRAFT_STAGE/meta/gui/icon.png $SNAPCRAFT_PRIME/meta/gui/
