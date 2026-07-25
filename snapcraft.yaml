@@ -62,3 +62,6 @@ parts:
     stage-packages:
       - libnotify4
       - liblzma5
+  desktop-file:
+    plugin: dump
+    source: snap/gui
