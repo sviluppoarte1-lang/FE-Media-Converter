@@ -64,8 +64,6 @@ parts:
       - liblzma5
     override-build: |
       craftctl default
-    override-prime: |
-      craftctl default
-      mkdir -p $SNAPCRAFT_PRIME/meta/gui
-      cp $CRAFT_PART_SRC/linux/com.videoconverterpro.desktop $SNAPCRAFT_PRIME/meta/gui/com.videoconverterpro.desktop
-      cp $CRAFT_PART_SRC/assets/icons/icon.png $SNAPCRAFT_PRIME/meta/gui/icon.png
+      mkdir -p $CRAFT_PART_INSTALL/meta/gui
+      cp "$CRAFT_PART_SRC/linux/com.videoconverterpro.desktop" "$CRAFT_PART_INSTALL/meta/gui/com.videoconverterpro.desktop"
+      cp "$CRAFT_PART_SRC/assets/icons/icon.png" "$CRAFT_PART_INSTALL/meta/gui/icon.png"
