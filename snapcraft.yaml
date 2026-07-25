@@ -63,7 +63,6 @@ parts:
       - libnotify4
       - liblzma5
       - ffmpeg
-      - ffprobe
   desktop-file:
     plugin: dump
     source: snap/gui
