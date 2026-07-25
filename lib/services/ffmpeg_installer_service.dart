@@ -10,6 +10,11 @@ class FFmpegInstallerService {
   static const String _prefKeyPasswordStored = 'ffmpeg_password_stored';
   static const String _prefKeyInstallAttempted = 'ffmpeg_install_attempted';
 
+  /// Rileva se l'app è in esecuzione all'interno di un snap.
+  static bool get isRunningInSnap {
+    return Platform.environment.containsKey('SNAP');
+  }
+
   /// Unisce stdout e stderr: FFmpeg stampa spesso la versione su stderr.
   static String _combinedProcessOutput(ProcessResult r) {
     return '${r.stdout}${r.stderr}';
@@ -158,6 +163,24 @@ class FFmpegInstallerService {
           'installSource': sourceInfo['method'],
           'installDetail': sourceInfo['detail'],
           'binaryPath': sourceInfo['binaryPath'],
+        };
+      }
+
+      // In snap, accetta la versione bundled indipendentemente dalla versione minima.
+      // L'utente non può aggiornare FFmpeg separatamente nello snap.
+      if (isRunningInSnap) {
+        final isRecommendedVersion = _compareVersions(currentVersion, _versionRequired) >= 0;
+        return {
+          'installed': true,
+          'version': currentVersion,
+          'needsUpdate': false,
+          'meetsMinimum': true,
+          'isRecommendedVersion': isRecommendedVersion,
+          'error': null,
+          'installSource': 'snap',
+          'installDetail': 'FFmpeg incluso nello snap',
+          'binaryPath': sourceInfo['binaryPath'],
+          'isSnapEnvironment': true,
         };
       }
 

@@ -26,8 +26,9 @@ class _DependencyCheckScreenState extends State<DependencyCheckScreen> {
   void initState() {
     super.initState();
     // Mostra dialog di installazione automatica se su Linux e FFmpeg non è disponibile/aggiornato
-    // L'app accetta versioni >= 5.0.0, ma mostra il dialog solo se la versione è < 5.0.0
+    // Non mostrare il dialog se l'app è in snap (non si può usare sudo)
     if (Platform.isLinux && 
+        !FFmpegInstallerService.isRunningInSnap &&
         (widget.dependencyStatus['available'] != true || 
          widget.dependencyStatus['needsUpdate'] == true) &&
         !_hasShownInstallDialog) {
