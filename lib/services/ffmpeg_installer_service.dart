@@ -11,8 +11,23 @@ class FFmpegInstallerService {
   static const String _prefKeyInstallAttempted = 'ffmpeg_install_attempted';
 
   /// Rileva se l'app è in esecuzione all'interno di un snap.
+  /// Usa più metodi per garantire il rilevamento affidabile.
   static bool get isRunningInSnap {
-    return Platform.environment.containsKey('SNAP');
+    // Metodo 1: Variabile d'ambiente SNAP (più comune)
+    if (Platform.environment.containsKey('SNAP')) return true;
+    // Metodo 2: Variabile d'ambiente SNAP_NAME
+    if (Platform.environment.containsKey('SNAP_NAME')) return true;
+    // Metodo 3: Controlla se l'eseguibile è in una cartella /snap/
+    try {
+      final exePath = Platform.resolvedExecutable;
+      if (exePath.contains('/snap/') || exePath.startsWith('/snap/')) return true;
+    } catch (_) {}
+    // Metodo 4: Controlla se la cartella dello snap esiste
+    try {
+      final snapDir = Directory('/snap/fe-media-converter/current');
+      if (snapDir.existsSync()) return true;
+    } catch (_) {}
+    return false;
   }
 
   /// Unisce stdout e stderr: FFmpeg stampa spesso la versione su stderr.
