@@ -204,7 +204,7 @@ class _DependencyCheckScreenState extends State<DependencyCheckScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                 ),
-                if (Platform.isLinux && (widget.dependencyStatus['needsUpdate'] == true || widget.dependencyStatus['available'] != true)) ...[
+                if (Platform.isLinux && !FFmpegInstallerService.isRunningInSnap && (widget.dependencyStatus['needsUpdate'] == true || widget.dependencyStatus['available'] != true)) ...[
                   const SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: _showInstallDialog,

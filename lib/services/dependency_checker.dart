@@ -11,6 +11,25 @@ class DependencyChecker {
     try {
       final versionCheck = await FFmpegInstallerService.checkFFmpegVersion();
       
+      // In snap, accetta FFmpeg bundled indipendentemente dalla versione
+      if (FFmpegInstallerService.isRunningInSnap && versionCheck['installed'] == true) {
+        return {
+          'available': true,
+          'version': versionCheck['version'],
+          'gpu_nvidia': false,
+          'gpu_intel': false,
+          'gpu_amd': false,
+          'cpu': true,
+          'os': 'linux',
+          'needsUpdate': false,
+          'isRecommendedVersion': versionCheck['isRecommendedVersion'] == true,
+          'installSource': 'snap',
+          'installDetail': 'FFmpeg incluso nello snap',
+          'binaryPath': versionCheck['binaryPath'],
+          'isSnapEnvironment': true,
+        };
+      }
+
       final needsMandatoryUpdate = versionCheck['needsUpdate'] == true;
       final meetsMinimum = versionCheck['meetsMinimum'] == true ||
           (versionCheck['installed'] == true && needsMandatoryUpdate == false);
