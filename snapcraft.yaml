@@ -1,6 +1,6 @@
 name: fe-media-converter
 base: core22
-version: 2.0.2
+version: 2.0.3
 summary: Convert and enhance video, audio, and images with FFmpeg and optional AI tools
 description: |
   FE Media Converter (Video Converter Pro) is a desktop media toolkit for Linux.
@@ -30,7 +30,7 @@ apps:
   fe-media-converter:
     command: video_converter_pro
     extensions: [gnome]
-    desktop: com.videoconverterpro.desktop
+    desktop: fe-media-converter.desktop
     environment:
       TMPDIR: $XDG_RUNTIME_DIR
     plugs:
@@ -63,6 +63,4 @@ parts:
       - libnotify4
       - liblzma5
       - ffmpeg
-  desktop-file:
-    plugin: dump
-    source: snap/gui
+
