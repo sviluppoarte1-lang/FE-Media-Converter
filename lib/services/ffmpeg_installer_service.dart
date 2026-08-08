@@ -136,6 +136,56 @@ class FFmpegInstallerService {
   /// Verifica se FFmpeg è installato con versione >= 5.0.0
   /// [needsUpdate] = true solo se versione < minimo (non per "solo" < 8.0.1 consigliata).
   static Future<Map<String, dynamic>> checkFFmpegVersion() async {
+    // In snap, accetta FFmpeg bundled indipendentemente dalla versione.
+    // Il controllo va PRIMA di tutto perché lo snap ha FFmpeg incluso
+    // e non deve mai mostrare il dialog di installazione.
+    if (isRunningInSnap) {
+      try {
+        final result = await Process.run('ffmpeg', ['-hide_banner', '-version']);
+        final combined = _combinedProcessOutput(result);
+        String? currentVersion = _parseFfmpegVersionString(combined);
+        
+        // Se il parsing fallisce, prova con ffprobe
+        if (currentVersion == null) {
+          try {
+            final pr = await Process.run('ffprobe', ['-hide_banner', '-version']);
+            final c2 = _combinedProcessOutput(pr);
+            currentVersion = _parseFfmpegVersionString(c2);
+          } catch (_) {}
+        }
+        
+        final isRecommendedVersion = currentVersion != null &&
+            _compareVersions(currentVersion, _versionRequired) >= 0;
+        
+        return {
+          'installed': true,
+          'version': currentVersion ?? 'bundled',
+          'needsUpdate': false,
+          'meetsMinimum': true,
+          'isRecommendedVersion': isRecommendedVersion,
+          'error': null,
+          'installSource': 'snap',
+          'installDetail': 'FFmpeg incluso nello snap',
+          'binaryPath': null,
+          'isSnapEnvironment': true,
+        };
+      } catch (_) {
+        // Anche se ffmpeg non riesce, lo snap lo include sempre
+        return {
+          'installed': true,
+          'version': 'bundled',
+          'needsUpdate': false,
+          'meetsMinimum': true,
+          'isRecommendedVersion': false,
+          'error': null,
+          'installSource': 'snap',
+          'installDetail': 'FFmpeg incluso nello snap',
+          'binaryPath': null,
+          'isSnapEnvironment': true,
+        };
+      }
+    }
+
     try {
       final result = await Process.run('ffmpeg', ['-hide_banner', '-version']);
       final combined = _combinedProcessOutput(result);
@@ -178,24 +228,6 @@ class FFmpegInstallerService {
           'installSource': sourceInfo['method'],
           'installDetail': sourceInfo['detail'],
           'binaryPath': sourceInfo['binaryPath'],
-        };
-      }
-
-      // In snap, accetta la versione bundled indipendentemente dalla versione minima.
-      // L'utente non può aggiornare FFmpeg separatamente nello snap.
-      if (isRunningInSnap) {
-        final isRecommendedVersion = _compareVersions(currentVersion, _versionRequired) >= 0;
-        return {
-          'installed': true,
-          'version': currentVersion,
-          'needsUpdate': false,
-          'meetsMinimum': true,
-          'isRecommendedVersion': isRecommendedVersion,
-          'error': null,
-          'installSource': 'snap',
-          'installDetail': 'FFmpeg incluso nello snap',
-          'binaryPath': sourceInfo['binaryPath'],
-          'isSnapEnvironment': true,
         };
       }
 
