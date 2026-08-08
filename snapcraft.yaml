@@ -33,6 +33,8 @@ apps:
     desktop: fe-media-converter.desktop
     environment:
       TMPDIR: $XDG_RUNTIME_DIR
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GALLIUM_DRIVER: 'llvmpipe'
     plugs:
       - home
       - removable-media
