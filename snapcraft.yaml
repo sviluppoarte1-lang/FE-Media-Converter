@@ -1,0 +1,72 @@
+name: fe-media-converter
+base: core22
+version: 2.0.3
+summary: Convert and enhance video, audio, and images with FFmpeg and optional AI tools
+description: |
+  FE Media Converter (Video Converter Pro) is a desktop media toolkit for Linux.
+  It wraps a powerful FFmpeg-based pipeline behind a simple interface so you can
+  batch-convert videos, audio tracks, and images, tune quality, and apply
+  professional filters without typing long command lines.
+
+  Key capabilities:
+  - Video, audio, and image modes with format presets and codec selection
+    (e.g. H.264, HEVC, VP9, AV1, AAC, MP3, Opus, PNG, WebP).
+  - Quality controls: constant quality (CRF) or target bitrate.
+  - Queue with pause, resume, stop, and concurrent jobs.
+  - Drag-and-drop and multi-file selection.
+  - Advanced video filters: noise reduction, color correction, stabilization.
+  - Optional DRUNet AI denoising and PySceneDetect-based scene analysis.
+  - Audio tools: volume, dynamics, EQ presets, noise reduction.
+  - Image pipeline: filters, optional super-resolution / upscaling.
+  - Theme (light/dark/system), UI language (EN, IT, FR, DE, ES, PT).
+  - Integrated FFmpeg dependency check with guided install.
+grade: stable
+confinement: strict
+license: MIT
+architectures:
+  - amd64
+
+apps:
+  fe-media-converter:
+    command: video_converter_pro
+    extensions: [gnome]
+    desktop: fe-media-converter.desktop
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GALLIUM_DRIVER: 'llvmpipe'
+    plugs:
+      - home
+      - removable-media
+      - network
+      - x11
+      - wayland
+      - opengl
+      - audio-record
+      - audio-playback
+      - desktop
+      - desktop-legacy
+      - gsettings
+
+parts:
+  fe-media-converter:
+    source: .
+    plugin: flutter
+    flutter-channel: stable
+    source-type: local
+    build-packages:
+      - cmake
+      - ninja-build
+      - clang
+      - libgtk-3-dev
+      - liblzma-dev
+      - libstdc++-12-dev
+    stage-packages:
+      - libnotify4
+      - liblzma5
+      - ffmpeg
+      - zenity
+      - libgtk-3-0
+  desktop-file:
+    plugin: dump
+    source: snap/gui

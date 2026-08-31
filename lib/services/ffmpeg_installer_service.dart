@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/snap_environment.dart';
 
 class FFmpegInstallerService {
   static const String _versionRequired = '8.0.1'; // Versione consigliata
@@ -116,6 +117,20 @@ class FFmpegInstallerService {
   /// Verifica se FFmpeg è installato con versione >= 5.0.0
   /// [needsUpdate] = true solo se versione < minimo (non per "solo" < 8.0.1 consigliata).
   static Future<Map<String, dynamic>> checkFFmpegVersion() async {
+    // In snap, FFmpeg is always available via stage-packages
+    if (SnapEnvironment.isRunningInSnap) {
+      return {
+        'installed': true,
+        'version': 'bundled',
+        'needsUpdate': false,
+        'meetsMinimum': true,
+        'isRecommendedVersion': false,
+        'error': null,
+        'installSource': 'snap',
+        'installDetail': 'Bundled with snap package',
+      };
+    }
+
     try {
       final result = await Process.run('ffmpeg', ['-hide_banner', '-version']);
       final combined = _combinedProcessOutput(result);

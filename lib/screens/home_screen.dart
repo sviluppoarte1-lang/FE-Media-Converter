@@ -23,6 +23,7 @@ import 'package:video_converter_pro/l10n/app_localizations.dart';
 import 'package:video_converter_pro/providers/language_provider.dart';
 import 'package:video_converter_pro/screens/user_guide_screen.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/snap_environment.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ConversionStateProvider with ChangeNotifier {
@@ -416,6 +417,24 @@ class _ConversionTabState extends State<_ConversionTab> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.favorite, size: 18, color: Colors.white),
+                    label: Text(l10n.donateNow, style: const TextStyle(fontSize: 13, color: Colors.white)),
+                    onPressed: () async {
+                      final uri = Uri.parse('https://www.paypal.com/paypalme/fearescape/');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003087),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -792,6 +811,16 @@ class _ConversionTabState extends State<_ConversionTab> {
       return '${settingsProvider.outputFolder}/$fileName';
     } else {
       final directory = inputPath.split('/').sublist(0, inputPath.split('/').length - 1).join('/');
+      
+      // In snap strict confinement, we can only write to $HOME (via home plug).
+      // If the input file is outside $HOME, fallback to $HOME.
+      if (SnapEnvironment.isRunningInSnap) {
+        final home = SnapEnvironment.homeDirectory;
+        if (!directory.startsWith(home)) {
+          return '$home/$fileName';
+        }
+      }
+      
       return '$directory/$fileName';
     }
   }

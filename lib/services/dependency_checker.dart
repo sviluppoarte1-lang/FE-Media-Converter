@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:video_converter_pro/services/ffmpeg_installer_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/snap_environment.dart';
 
 class DependencyChecker {
   static String _combinedEncodersOutput(ProcessResult r) {
@@ -8,6 +9,24 @@ class DependencyChecker {
   }
 
   static Future<Map<String, dynamic>> checkDependencies() async {
+    // In snap, FFmpeg is always available via stage-packages
+    if (SnapEnvironment.isRunningInSnap) {
+      return {
+        'available': true,
+        'version': 'bundled',
+        'gpu_nvidia': false,
+        'gpu_intel': false,
+        'gpu_amd': false,
+        'cpu': true,
+        'os': 'snap',
+        'needsUpdate': false,
+        'isRecommendedVersion': false,
+        'installSource': 'snap',
+        'installDetail': 'Bundled with snap package',
+        'binaryPath': null,
+      };
+    }
+
     try {
       final versionCheck = await FFmpegInstallerService.checkFFmpegVersion();
       
