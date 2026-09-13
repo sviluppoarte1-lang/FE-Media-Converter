@@ -13,6 +13,7 @@ import 'package:video_converter_pro/services/drunet_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
 import 'package:video_converter_pro/utils/processing_fps_sanitize.dart';
 import 'package:video_converter_pro/utils/snap_environment.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// Optional [processingFps]: video frames processed per second when FFmpeg reports it.
@@ -454,7 +455,7 @@ class FFmpegService {
       int safeThreads = 0;
 
       if (mediaType == MediaType.image) {
-        command = ['ffmpeg', '-y', '-loglevel', 'warning'];
+        command = [FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'warning'];
         safeThreads = _getSafeThreadCount(cpuThreads, false);
         if (useGpu && effectiveFilters.enableGpuAcceleration) {
           final gpuArgs = _getGpuAccelerationArgs(effectiveFilters, hasVideoFilters: false);
@@ -470,16 +471,15 @@ class FFmpegService {
           '(threads: $safeThreads)',
         );
       } else if (mediaType == MediaType.audio) {
-        command = ['ffmpeg', '-y', '-loglevel', 'info'];
+        command = [FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'info'];
         command.addAll(['-analyzeduration', '10000000']);
         command.addAll(['-probesize', '10000000']);
         command.addAll(['-i', conversionInputPath]);
         safeThreads = _getSafeThreadCount(cpuThreads, false);
-        command.addAll(['-threads', safeThreads.toString()]);
         useGpuEncodeVideo = false;
         appLog('🎵 Audio: CPU only (threads: $safeThreads, no GPU)');
       } else {
-        command = ['ffmpeg', '-y', '-loglevel', 'info'];
+        command = [FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'info'];
         command.addAll(['-analyzeduration', '10000000']);
         command.addAll(['-probesize', '10000000']);
         command.addAll(['-fflags', '+genpts+igndts']);
@@ -1728,7 +1728,7 @@ class FFmpegService {
         return {'success': false, 'error': 'File non trovato: $filePath'};
       }
 
-      final process = await Process.run('ffprobe', [
+      final process = await Process.run(FFmpegPaths.ffprobePath, [
         '-v', 'error',
         '-select_streams', 'v:0',
         '-show_entries', 'stream=width,height,codec_name,duration,r_frame_rate',
@@ -1949,7 +1949,7 @@ class FFmpegService {
     if (outputExt == 'wav') {
       final audioFilterChain = buildAudioFilterChain(audioFilters);
       final command = <String>[
-        'ffmpeg', '-y', '-loglevel', 'warning',
+        FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'warning',
         '-i', inputPath,
         '-vn',           // Solo audio, no video
         '-acodec', 'pcm_s16le',  // PCM 16-bit per WAV
@@ -1964,7 +1964,7 @@ class FFmpegService {
     
     // MP3 e altri formati: comando standard
     final command = <String>[
-      'ffmpeg', '-y', '-loglevel', 'warning',
+      FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'warning',
       '-i', inputPath,
       '-vn',
     ];
@@ -2188,7 +2188,7 @@ class FFmpegService {
       _availableFilters = {};
       
       // Verifica quali filtri sono disponibili in FFmpeg
-      final process = await Process.run('ffmpeg', ['-filters']);
+      final process = await Process.run(FFmpegPaths.ffmpegPath, ['-filters']);
       final output = process.stdout.toString();
       
       // Controlla filtri avanzati (video e audio)
@@ -2272,11 +2272,11 @@ class FFmpegService {
       appLog('🔍 Checking available GPU accelerations...');
       
       // Controlla encoder disponibili
-      final encodersResult = await Process.run('ffmpeg', ['-hide_banner', '-encoders']);
+      final encodersResult = await Process.run(FFmpegPaths.ffmpegPath, ['-hide_banner', '-encoders']);
       final encodersOutput = encodersResult.stdout.toString();
       
       // Controlla decoder disponibili
-      final decodersResult = await Process.run('ffmpeg', ['-hide_banner', '-decoders']);
+      final decodersResult = await Process.run(FFmpegPaths.ffmpegPath, ['-hide_banner', '-decoders']);
       final decodersOutput = decodersResult.stdout.toString();
       
       // Rilevamento NVIDIA (NVENC)

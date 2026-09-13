@@ -6,6 +6,7 @@ import 'frame_by_frame_analyzer.dart';
 import 'scene_detection_service.dart';
 import 'drunet_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class VideoPreProcessor {
   static Future<Map<String, dynamic>> analyzeVideoQuality(String inputPath) async {
@@ -24,7 +25,7 @@ class VideoPreProcessor {
       // Timeout di 10 secondi per evitare blocchi
       ProcessResult process;
       try {
-        process = await Process.run('ffprobe', [
+        process = await Process.run(FFmpegPaths.ffprobePath, [
           '-v', 'error',
           '-select_streams', 'v:0',
           '-show_entries', 'stream=width,height,codec_name,duration,r_frame_rate,pix_fmt,bit_rate,color_primaries,color_transfer,color_space,field_order',
@@ -292,7 +293,7 @@ class VideoPreProcessor {
     try {
       // Usa signalstats per analisi rapida della luminosità
       // RIDOTTO: Analizza solo 10 frame per velocità (era 30)
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'signalstats=stat=tout',
         '-frames:v', '10',  // RIDOTTO: 10 frame invece di 30 per velocità
@@ -650,7 +651,7 @@ class VideoPreProcessor {
 
   static Future<Map<String, dynamic>> advancedQualityAnalysis(String inputPath) async {
     try {
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'signalstats=stat=out',
         '-f', 'null',

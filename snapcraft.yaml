@@ -1,6 +1,6 @@
 name: fe-media-converter
 base: core22
-version: 2.0.3
+version: 2.0.4
 summary: Convert and enhance video, audio, and images with FFmpeg and optional AI tools
 description: |
   FE Media Converter (Video Converter Pro) is a desktop media toolkit for Linux.
@@ -64,7 +64,6 @@ parts:
     stage-packages:
       - libnotify4
       - liblzma5
-      - ffmpeg
       - zenity
       - libgtk-3-0
   desktop-file:

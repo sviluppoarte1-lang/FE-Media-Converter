@@ -1,5 +1,21 @@
 import 'dart:io';
+import 'package:flutter/widgets.dart';
+import 'package:video_converter_pro/l10n/app_localizations.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
+
+String _upscaleMsg(String key) {
+  final lang = Platform.localeName.toLowerCase().split('_').first;
+  final l10n = lookupAppLocalizations(Locale(lang));
+  switch (key) {
+    case 'start':
+      return l10n.upscalingWithFfmpeg;
+    case 'done':
+      return l10n.completed;
+    default:
+      return key;
+  }
+}
 
 class ImageUpscalerService {
   bool _initialized = false;
@@ -26,16 +42,16 @@ class ImageUpscalerService {
     void Function(double progress, String message)? onProgress,
   ) async {
     try {
-      onProgress?.call(0.0, 'Upscaling con FFmpeg...');
+      onProgress?.call(0.0, _upscaleMsg('start'));
 
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-y',
         '-i', inputPath,
         '-vf', 'scale=iw*$scaleFactor:ih*$scaleFactor:flags=lanczos',
         outputPath,
       ]);
 
-      onProgress?.call(1.0, 'Completato');
+      onProgress?.call(1.0, _upscaleMsg('done'));
 
       if (process.exitCode == 0 && File(outputPath).existsSync()) {
         return outputPath;

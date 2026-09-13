@@ -1,6 +1,7 @@
 import 'dart:io';
 import '../models/video_filters.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class PixelQualityAnalyzer {
   /// Analizza la qualità pixel-per-pixel del video
@@ -52,7 +53,7 @@ class PixelQualityAnalyzer {
     
     try {
       // Estrai 5 frame distribuiti nel video (inizio, 25%, 50%, 75%, fine)
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'select=not(mod(n\\,30))',  // Ogni 30 frame
         '-frames:v', '5',
@@ -79,7 +80,7 @@ class PixelQualityAnalyzer {
   static Future<Map<String, dynamic>> _analyzeHistogram(String inputPath) async {
     try {
       // Analizza con signalstats per statistiche precise
-      final statsProcess = await Process.run('ffmpeg', [
+      final statsProcess = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'signalstats=stat=tout',
         '-frames:v', '30',
@@ -97,7 +98,7 @@ class PixelQualityAnalyzer {
   /// Analizza signalstats per statistiche video dettagliate
   static Future<Map<String, dynamic>> _analyzeSignalStats(String inputPath) async {
     try {
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'signalstats=stat=tout:metadata=1',
         '-frames:v', '30',

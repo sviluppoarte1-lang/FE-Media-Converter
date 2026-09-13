@@ -1,5 +1,6 @@
 import 'dart:io';
 import '../models/video_filters.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class VapourSynthIntegration {
   /// Crea script VapourSynth per enhancement avanzato
@@ -170,7 +171,7 @@ video = core.std.Expr(video, expr=["x 0.299 * y 0.587 * z 0.114 * + +"])
         '-'
       ]);
 
-      final ffmpegProcess = await Process.start('ffmpeg', [
+      final ffmpegProcess = await Process.start(FFmpegPaths.ffmpegPath, [
         '-y',
         '-i', 'pipe:0',
         '-c:v', 'libx264',

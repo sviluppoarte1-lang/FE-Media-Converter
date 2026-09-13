@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:video_converter_pro/utils/app_log.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class FrameByFrameAnalyzer {
   /// Analizza ogni frame del video per rumore e qualità pixel-per-pixel
@@ -10,7 +11,7 @@ class FrameByFrameAnalyzer {
       
       // Usa FFmpeg per analizzare un numero limitato di frame (ottimizzato per velocità)
       // RIDOTTO: Analizza solo 15 frame invece di tutti per evitare blocchi
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'signalstats=stat=tout:metadata=1',
         '-frames:v', '15',  // RIDOTTO: 15 frame invece di tutti per velocità
@@ -180,7 +181,7 @@ class FrameByFrameAnalyzer {
       appLog('🔍 [FrameByFrame] Analisi qualità pixel-per-pixel...');
       
       // Usa FFmpeg histogram per analisi dettagliata
-      final process = await Process.run('ffmpeg', [
+      final process = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'histogram=display_mode=overlay',
         '-frames:v', '60',  // Analizza più frame per accuratezza
@@ -189,7 +190,7 @@ class FrameByFrameAnalyzer {
       ], runInShell: false);
       
       // Analizza anche con cropdetect per rilevare bordi neri/artefatti
-      final cropProcess = await Process.run('ffmpeg', [
+      final cropProcess = await Process.run(FFmpegPaths.ffmpegPath, [
         '-i', inputPath,
         '-vf', 'cropdetect=24:16:0',
         '-frames:v', '30',

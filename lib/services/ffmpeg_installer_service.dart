@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
 import 'package:video_converter_pro/utils/snap_environment.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class FFmpegInstallerService {
   static const String _versionRequired = '8.0.1'; // Versione consigliata
@@ -132,7 +133,7 @@ class FFmpegInstallerService {
     }
 
     try {
-      final result = await Process.run('ffmpeg', ['-hide_banner', '-version']);
+      final result = await Process.run(FFmpegPaths.ffmpegPath, ['-hide_banner', '-version']);
       final combined = _combinedProcessOutput(result);
 
       if (result.exitCode != 0 && combined.isEmpty) {
@@ -151,7 +152,7 @@ class FFmpegInstallerService {
       if (currentVersion == null && result.exitCode == 0) {
         // Ultimo tentativo: ffprobe
         try {
-          final pr = await Process.run('ffprobe', ['-hide_banner', '-version']);
+          final pr = await Process.run(FFmpegPaths.ffprobePath, ['-hide_banner', '-version']);
           final c2 = _combinedProcessOutput(pr);
           currentVersion = _parseFfmpegVersionString(c2);
         } catch (_) {}

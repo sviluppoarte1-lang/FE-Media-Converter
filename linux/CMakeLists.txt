@@ -162,3 +162,12 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Install bundled FFmpeg binaries next to the executable
+set(FFMPEG_BUNDLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bundled")
+if(EXISTS "${FFMPEG_BUNDLED_DIR}/ffmpeg")
+  install(PROGRAMS "${FFMPEG_BUNDLED_DIR}/ffmpeg"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
+  install(PROGRAMS "${FFMPEG_BUNDLED_DIR}/ffprobe"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
+endif()

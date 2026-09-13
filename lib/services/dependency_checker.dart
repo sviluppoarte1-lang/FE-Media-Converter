@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:video_converter_pro/services/ffmpeg_installer_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
 import 'package:video_converter_pro/utils/snap_environment.dart';
+import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class DependencyChecker {
   static String _combinedEncodersOutput(ProcessResult r) {
@@ -50,7 +51,7 @@ class DependencyChecker {
         };
       }
 
-      final encodersResult = await Process.run('ffmpeg', ['-hide_banner', '-encoders']);
+      final encodersResult = await Process.run(FFmpegPaths.ffmpegPath, ['-hide_banner', '-encoders']);
       final encodersOutput = _combinedEncodersOutput(encodersResult);
 
       return {
