@@ -56,6 +56,9 @@ __pycache__/
 
 # Ignora i modelli AI pesanti (file .pth)
 *.pth
+# Tranne il modello DRUNet bundled nell'app
+!linux/bundled/models/drunet/drunet_model.pth
+!assets/models/drunet/drunet_model.pth
 
 # Snap build artifacts
 snap-build/

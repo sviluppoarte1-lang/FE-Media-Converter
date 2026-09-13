@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as path;
+import 'package:video_converter_pro/l10n/app_localizations.dart';
 
 class ModelsManagerService {
+  static const String prefsKeyDRUNetSkipped = 'drunet_download_skipped';
+
   /// Fonti: KAIR `drunet_color.pth` salvato come `drunet_model.pth` per l'app.
   static const List<String> drunetModelDownloadUrls = [
     'https://github.com/cszn/KAIR/releases/download/v1.0/drunet_color.pth',
@@ -11,6 +15,25 @@ class ModelsManagerService {
 
   /// Dimensione attesa ~125 MB (KAIR); usata solo per barra di avanzamento se Content-Length manca.
   static const int _expectedDrunetBytes = 125 * 1024 * 1024;
+
+  static String _progressText(String key, {String extra = ''}) {
+    final lang = Platform.localeName.toLowerCase().split('_').first;
+    final l10n = lookupAppLocalizations(Locale(lang));
+    switch (key) {
+      case 'connecting':
+        return '${l10n.downloadConnecting} $extra';
+      case 'downloading':
+        return '${l10n.drunetDownloadingLabel}... $extra';
+      case 'retry':
+        return '${l10n.retryingWithMirror}... $extra';
+      case 'python_script':
+        return l10n.downloadViaPythonScript;
+      case 'completed':
+        return l10n.completed;
+      default:
+        return key;
+    }
+  }
 
   /// Get app installation directory
   static String _getAppDirectory() {
@@ -47,6 +70,16 @@ class ModelsManagerService {
       return path.join(homeDir, '.video-converter-pro', 'models');
     }
     return path.join(_getAppDirectory(), 'scripts', 'python', 'models');
+  }
+
+  /// Path to bundled model next to the executable (build output).
+  static String? _getBundledDrunetModelPath() {
+    try {
+      final exeDir = path.dirname(Platform.resolvedExecutable);
+      final bundled = path.join(exeDir, 'models', 'drunet', 'drunet_model.pth');
+      if (File(bundled).existsSync()) return bundled;
+    } catch (_) {}
+    return null;
   }
 
   static String get _venvPath => path.join(_getScriptsDirectory(), 'venv');
@@ -88,8 +121,18 @@ class ModelsManagerService {
   }) async {
     final modelsDir = getModelsDirectory(modelsDirectory);
 
-    final drunetModelPath = path.join(modelsDir, 'drunet', 'drunet_model.pth');
-    final drunetExists = await checkModelExists(drunetModelPath);
+    var drunetModelPath = path.join(modelsDir, 'drunet', 'drunet_model.pth');
+    var drunetExists = await checkModelExists(drunetModelPath);
+
+    // Check bundled model first (next to executable)
+    if (!drunetExists) {
+      final bundled = _getBundledDrunetModelPath();
+      if (bundled != null) {
+        drunetModelPath = bundled;
+        drunetExists = true;
+      }
+    }
+
     final drunetSize = drunetExists ? await File(drunetModelPath).length() : 0;
 
     return {
@@ -156,7 +199,10 @@ class ModelsManagerService {
 
     for (var i = 0; i < drunetModelDownloadUrls.length; i++) {
       final url = drunetModelDownloadUrls[i];
-      onProgress?.call(0.0, 'Connessione (${i + 1}/${drunetModelDownloadUrls.length})…');
+      onProgress?.call(
+        0.0,
+        _progressText('connecting', extra: '(${i + 1}/${drunetModelDownloadUrls.length})...'),
+      );
       HttpClient? client;
       try {
         final uri = Uri.parse(url);
@@ -183,7 +229,10 @@ class ModelsManagerService {
           }
           onProgress?.call(
             p,
-            'Scaricamento DRUNet… ${(received / (1024 * 1024)).toStringAsFixed(1)} MB',
+            _progressText(
+              'downloading',
+              extra: '${(received / (1024 * 1024)).toStringAsFixed(1)} MB',
+            ),
           );
         }
         await sink.close();
@@ -194,10 +243,10 @@ class ModelsManagerService {
           continue;
         }
         await File(tmpPath).rename(outPath);
-        onProgress?.call(1.0, 'Completato');
+        onProgress?.call(1.0, _progressText('completed'));
         return {'success': true, 'path': outPath, 'bytes': len};
       } catch (e) {
-        onProgress?.call(0.0, 'Riprovo con mirror alternativo… ($e)');
+        onProgress?.call(0.0, _progressText('retry', extra: '($e)'));
         continue;
       } finally {
         client?.close(force: true);
@@ -206,7 +255,7 @@ class ModelsManagerService {
 
     final script = File(_downloadDrunetScriptPath);
     if (await script.exists()) {
-      onProgress?.call(0.0, 'Download tramite script Python…');
+      onProgress?.call(0.0, _progressText('python_script'));
       try {
         await Process.run('chmod', ['+x', _downloadDrunetScriptPath]);
         final python = await getPythonExecutable();
@@ -220,7 +269,7 @@ class ModelsManagerService {
             try {
               final decoded = jsonDecode(out) as Map<String, dynamic>;
               if (decoded['success'] == true) {
-                onProgress?.call(1.0, 'Completato');
+                onProgress?.call(1.0, _progressText('completed'));
                 return decoded;
               }
             } catch (_) {}

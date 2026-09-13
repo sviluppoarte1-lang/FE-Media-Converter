@@ -171,3 +171,10 @@ if(EXISTS "${FFMPEG_BUNDLED_DIR}/ffmpeg")
   install(PROGRAMS "${FFMPEG_BUNDLED_DIR}/ffprobe"
     DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
 endif()
+
+# Install bundled AI models next to the executable
+set(MODELS_BUNDLED_DIR "${FFMPEG_BUNDLED_DIR}/models")
+if(EXISTS "${MODELS_BUNDLED_DIR}/drunet/drunet_model.pth")
+  install(FILES "${MODELS_BUNDLED_DIR}/drunet/drunet_model.pth"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/models/drunet" COMPONENT Runtime)
+endif()
