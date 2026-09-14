@@ -59,6 +59,9 @@ __pycache__/
 # Tranne il modello DRUNet bundled nell'app
 !linux/bundled/models/drunet/drunet_model.pth
 !assets/models/drunet/drunet_model.pth
+# ONNX model files
+!linux/bundled/models/drunet/drunet_model.onnx
+!linux/bundled/models/drunet/drunet_model.onnx.data
 
 # Snap build artifacts
 snap-build/

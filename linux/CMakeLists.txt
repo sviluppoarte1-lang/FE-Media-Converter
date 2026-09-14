@@ -178,3 +178,11 @@ if(EXISTS "${MODELS_BUNDLED_DIR}/drunet/drunet_model.pth")
   install(FILES "${MODELS_BUNDLED_DIR}/drunet/drunet_model.pth"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/models/drunet" COMPONENT Runtime)
 endif()
+if(EXISTS "${MODELS_BUNDLED_DIR}/drunet/drunet_model.onnx")
+  install(FILES "${MODELS_BUNDLED_DIR}/drunet/drunet_model.onnx"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/models/drunet" COMPONENT Runtime)
+endif()
+if(EXISTS "${MODELS_BUNDLED_DIR}/drunet/drunet_model.onnx.data")
+  install(FILES "${MODELS_BUNDLED_DIR}/drunet/drunet_model.onnx.data"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/models/drunet" COMPONENT Runtime)
+endif()
