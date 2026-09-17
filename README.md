@@ -31,32 +31,7 @@ Official repository: [https://github.com/sviluppoarte1-lang/Fe-Media-Converter](
 
 > The app includes runtime checks for dependencies and can guide users through FFmpeg installation/update steps.
 
-## Build and Run (Development)
 
-1. Install Flutter SDK and Linux desktop dependencies.
-2. Install project dependencies:
-
-```bash
-flutter pub get
-```
-
-3. Run the app:
-
-```bash
-flutter run -d linux
-```
-
-4. Analyze the project:
-
-```bash
-flutter analyze
-```
-
-## Build Release
-
-```bash
-flutter build linux --release
-```
 
 Release bundle output:
 
