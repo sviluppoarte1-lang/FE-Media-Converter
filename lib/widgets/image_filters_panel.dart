@@ -462,6 +462,100 @@ class _ImageFiltersPanelState extends State<ImageFiltersPanel> {
               const SizedBox(height: 16),
 
               _buildFilterSection(
+                title: l10n.drunetDenoisingTitle,
+                icon: Icons.auto_fix_high,
+                children: [
+                  SwitchListTile(
+                    title: Text(l10n.enableDRUNet),
+                    subtitle: Text(l10n.drunetDenoisingDesc),
+                    value: _filters.enableDRUNet,
+                    onChanged: (value) => _updateFilters(_filters.copyWith(enableDRUNet: value)),
+                  ),
+                  if (_filters.enableDRUNet) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: DropdownButtonFormField<String>(
+                        value: _filters.drunetMode,
+                        decoration: InputDecoration(
+                          labelText: l10n.drunetModeLabel,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: [
+                          DropdownMenuItem(value: 'denoise', child: Text(l10n.drunetModeDenoise)),
+                          DropdownMenuItem(value: 'deblur', child: Text(l10n.drunetModeDeblur)),
+                          DropdownMenuItem(value: 'upscale', child: Text(l10n.drunetModeUpscale)),
+                          DropdownMenuItem(value: 'jpeg_restore', child: Text(l10n.drunetModeJpegRestore)),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            _updateFilters(_filters.copyWith(drunetMode: value));
+                          }
+                        },
+                      ),
+                    ),
+                    if (_filters.drunetMode == 'denoise')
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(l10n.drunetNoiseLevel, style: const TextStyle(fontSize: 12))),
+                            Expanded(
+                              child: Slider(
+                                value: _filters.drunetNoiseLevel.toDouble(),
+                                min: 1, max: 50, divisions: 49,
+                                label: _filters.drunetNoiseLevel.toString(),
+                                onChanged: (value) => _updateFilters(_filters.copyWith(drunetNoiseLevel: value.round())),
+                              ),
+                            ),
+                            SizedBox(width: 28, child: Text('${_filters.drunetNoiseLevel}', style: const TextStyle(fontSize: 11))),
+                          ],
+                        ),
+                      ),
+                    if (_filters.drunetMode == 'upscale')
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(l10n.drunetUpscaleFactor, style: const TextStyle(fontSize: 12))),
+                            Expanded(
+                              child: Slider(
+                                value: _filters.drunetUpscaleFactor,
+                                min: 1.0, max: 4.0, divisions: 6,
+                                label: '${_filters.drunetUpscaleFactor}x',
+                                onChanged: (value) => _updateFilters(_filters.copyWith(drunetUpscaleFactor: value)),
+                              ),
+                            ),
+                            SizedBox(width: 28, child: Text('${_filters.drunetUpscaleFactor}x', style: const TextStyle(fontSize: 11))),
+                          ],
+                        ),
+                      ),
+                    if (_filters.drunetMode == 'deblur')
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(l10n.drunetDeblurStrength, style: const TextStyle(fontSize: 12))),
+                            Expanded(
+                              child: Slider(
+                                value: _filters.drunetDeblurStrength,
+                                min: 0.0, max: 1.0, divisions: 10,
+                                label: _filters.drunetDeblurStrength.toStringAsFixed(1),
+                                onChanged: (value) => _updateFilters(_filters.copyWith(drunetDeblurStrength: value)),
+                              ),
+                            ),
+                            SizedBox(width: 28, child: Text('${_filters.drunetDeblurStrength.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11))),
+                          ],
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              _buildFilterSection(
                 title: l10n.imageColorProfiles,
                 icon: Icons.palette,
                 children: [
@@ -905,24 +999,30 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
         // FFmpeg ha successo ma il file non esiste - potrebbe essere un problema di percorso
         appLog('❌ [Preview] FFmpeg ha successo ma il file non esiste!');
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           setState(() {
             _previewPath = widget.imagePath;
             _loading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Errore: file anteprima non creato')),
+            SnackBar(content: Text('${l10n.error}: ${l10n.previewFileNotCreated}')),
           );
         }
       } else {
         // FFmpeg ha fallito
         appLog('❌ [Preview] FFmpeg fallito con exit code ${process.exitCode}');
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           setState(() {
             _previewPath = widget.imagePath;
             _loading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Errore generazione anteprima: ${process.stderr.toString().substring(0, process.stderr.toString().length > 100 ? 100 : process.stderr.toString().length)}')),
+            SnackBar(
+              content: Text(
+                '${l10n.previewGenerationError}: ${process.stderr.toString().substring(0, process.stderr.toString().length > 100 ? 100 : process.stderr.toString().length)}',
+              ),
+            ),
           );
         }
       }
@@ -930,12 +1030,13 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
       appLog('❌ [Preview] Errore generazione anteprima: $e');
       appLog('📚 [Preview] Stack trace: $stackTrace');
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         setState(() {
           _previewPath = widget.imagePath;
           _loading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e')),
+          SnackBar(content: Text('${l10n.error}: $e')),
         );
       }
     }

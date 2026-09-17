@@ -133,6 +133,12 @@ abstract class AppLocalizations {
   /// **'About'**
   String get about;
 
+  /// No description provided for @donateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Donate Now'**
+  String get donateNow;
+
   /// No description provided for @close.
   ///
   /// In en, this message translates to:
@@ -1699,6 +1705,18 @@ abstract class AppLocalizations {
   /// **'Optimized for old videos and films'**
   String get filmRestorationDesc;
 
+  /// No description provided for @smoothCleanLook.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth / clean'**
+  String get smoothCleanLook;
+
+  /// No description provided for @smoothCleanLookDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Less grain and noise; softer look (faster than AI denoise)'**
+  String get smoothCleanLookDesc;
+
   /// No description provided for @fundamentalFilters.
   ///
   /// In en, this message translates to:
@@ -1846,7 +1864,7 @@ abstract class AppLocalizations {
   /// No description provided for @drunetDenoisingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Deep learning denoising when drunet_model.pth is in models/drunet/. On by default.'**
+  /// **'AI noise reduction (not upscaling). Pre-pass runs when Python (NumPy, OpenCV) and scripts/python/drunet_denoiser.py are set up; optional drunet_model.pth for future neural weights. Does not increase resolution—use super-resolution filters for that.'**
   String get drunetDenoisingDesc;
 
   /// No description provided for @sceneDetectionTitle.
@@ -2130,6 +2148,333 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get pythonSetupRetry;
+
+  /// No description provided for @benchmarkRunStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Running benchmark...'**
+  String get benchmarkRunStart;
+
+  /// No description provided for @benchmarkRunButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Run auto benchmark'**
+  String get benchmarkRunButton;
+
+  /// No description provided for @benchmarkRunningButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark running...'**
+  String get benchmarkRunningButton;
+
+  /// No description provided for @benchmarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark done'**
+  String get benchmarkDone;
+
+  /// No description provided for @benchmarkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark failed'**
+  String get benchmarkFailed;
+
+  /// No description provided for @benchmarkHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark history'**
+  String get benchmarkHistoryTitle;
+
+  /// No description provided for @benchmarkHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No benchmark history yet'**
+  String get benchmarkHistoryEmpty;
+
+  /// No description provided for @benchmarkPhaseStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting benchmark'**
+  String get benchmarkPhaseStarting;
+
+  /// No description provided for @benchmarkPhaseCollecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Collecting ffmpeg and GPU info'**
+  String get benchmarkPhaseCollecting;
+
+  /// No description provided for @benchmarkPhaseFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarking fast preset'**
+  String get benchmarkPhaseFast;
+
+  /// No description provided for @benchmarkPhaseMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarking medium preset'**
+  String get benchmarkPhaseMedium;
+
+  /// No description provided for @benchmarkPhaseHighQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmarking high quality preset'**
+  String get benchmarkPhaseHighQuality;
+
+  /// No description provided for @benchmarkPhaseSelecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Selecting best preset'**
+  String get benchmarkPhaseSelecting;
+
+  /// No description provided for @benchmarkPhaseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get benchmarkPhaseDone;
+
+  /// No description provided for @outputFileNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Output file not found'**
+  String get outputFileNotFound;
+
+  /// No description provided for @remainingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remainingLabel;
+
+  /// No description provided for @fileExistsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'File already exists'**
+  String get fileExistsStatus;
+
+  /// No description provided for @stoppedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get stoppedStatus;
+
+  /// No description provided for @upscalingWithFfmpeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Upscaling with FFmpeg...'**
+  String get upscalingWithFfmpeg;
+
+  /// No description provided for @downloadConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get downloadConnecting;
+
+  /// No description provided for @drunetDownloadingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading DRUNet'**
+  String get drunetDownloadingLabel;
+
+  /// No description provided for @retryingWithMirror.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying with alternate mirror'**
+  String get retryingWithMirror;
+
+  /// No description provided for @downloadViaPythonScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading via Python script'**
+  String get downloadViaPythonScript;
+
+  /// No description provided for @previewFileNotCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview file not created'**
+  String get previewFileNotCreated;
+
+  /// No description provided for @previewGenerationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview generation error'**
+  String get previewGenerationError;
+
+  /// No description provided for @preparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing...'**
+  String get preparing;
+
+  /// No description provided for @analyzingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing video...'**
+  String get analyzingVideo;
+
+  /// No description provided for @checkingAcceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking GPU/filter acceleration...'**
+  String get checkingAcceleration;
+
+  /// No description provided for @drunetChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: checking dependencies and model...'**
+  String get drunetChecking;
+
+  /// No description provided for @drunetExtractFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: extracting frames...'**
+  String get drunetExtractFrames;
+
+  /// No description provided for @drunetDenoisingFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: AI denoising in progress (may take time)...'**
+  String get drunetDenoisingFrames;
+
+  /// No description provided for @drunetRebuildVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: rebuilding video...'**
+  String get drunetRebuildVideo;
+
+  /// No description provided for @drunetPrepassDone.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet pre-pass completed, starting encoding...'**
+  String get drunetPrepassDone;
+
+  /// No description provided for @encodingStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting encoding...'**
+  String get encodingStarting;
+
+  /// No description provided for @estimatedTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated time'**
+  String get estimatedTimeLabel;
+
+  /// No description provided for @drunetInstallingDeps.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: installing Python dependencies...'**
+  String get drunetInstallingDeps;
+
+  /// No description provided for @drunetDepsInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet: dependencies installed, continuing...'**
+  String get drunetDepsInstalled;
+
+  /// No description provided for @drunetEnvPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install / repair DRUNet'**
+  String get drunetEnvPanelTitle;
+
+  /// No description provided for @drunetEnvPanelDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Creates scripts/python/venv and installs NumPy and OpenCV. Use this if AI denoising fails due to missing Python packages.'**
+  String get drunetEnvPanelDesc;
+
+  /// No description provided for @drunetInstallRepairButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Install / repair environment'**
+  String get drunetInstallRepairButton;
+
+  /// No description provided for @drunetRefreshEnvStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Check status'**
+  String get drunetRefreshEnvStatus;
+
+  /// No description provided for @drunetEnvCheckingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get drunetEnvCheckingStatus;
+
+  /// No description provided for @drunetEnvStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment ready'**
+  String get drunetEnvStatusReady;
+
+  /// No description provided for @drunetEnvStatusNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment not ready'**
+  String get drunetEnvStatusNotReady;
+
+  /// No description provided for @drunetEnvStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Status not checked'**
+  String get drunetEnvStatusUnknown;
+
+  /// No description provided for @drunetEnvInstallSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet Python environment is ready.'**
+  String get drunetEnvInstallSuccess;
+
+  /// No description provided for @drunetEnvInstallFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet setup failed: {error}'**
+  String drunetEnvInstallFailed(String error);
+
+  /// No description provided for @drunetModeLabel.
+  String get drunetModeLabel;
+
+  /// No description provided for @drunetModeDenoise.
+  String get drunetModeDenoise;
+
+  /// No description provided for @drunetModeDeblur.
+  String get drunetModeDeblur;
+
+  /// No description provided for @drunetModeUpscale.
+  String get drunetModeUpscale;
+
+  /// No description provided for @drunetModeJpegRestore.
+  String get drunetModeJpegRestore;
+
+  /// No description provided for @drunetUpscaleFactor.
+  String get drunetUpscaleFactor;
+
+  /// No description provided for @drunetDeblurStrength.
+  String get drunetDeblurStrength;
+
+  /// No description provided for @drunetNoiseLevel.
+  String get drunetNoiseLevel;
+
+  /// No description provided for @drunetDeviceLabel.
+  String get drunetDeviceLabel;
+
+  /// No description provided for @drunetDeviceAuto.
+  String get drunetDeviceAuto;
+
+  /// No description provided for @drunetDeviceCPU.
+  String get drunetDeviceCPU;
+
+  /// No description provided for @drunetDeviceCUDA.
+  String get drunetDeviceCUDA;
+
+  /// No description provided for @enableDRUNet.
+  String get enableDRUNet;
+
+  /// No description provided for @conversionProcessingRate.
+  ///
+  /// In en, this message translates to:
+  /// **'~{fps} fps'**
+  String conversionProcessingRate(String fps);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

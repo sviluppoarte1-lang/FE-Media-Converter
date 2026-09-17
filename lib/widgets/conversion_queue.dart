@@ -290,6 +290,20 @@ class ConversionQueue extends StatelessWidget {
               ),
             ],
           ),
+          if (task.status == ConversionStatus.processing &&
+              task.processingFps != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.conversionProcessingRate(
+                task.processingFps!.toStringAsFixed(1),
+              ),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
         ],
         
         // Messaggio di errore per i task falliti
@@ -432,6 +446,7 @@ class ConversionQueue extends StatelessWidget {
   }
 
   void _openOutputFolder(BuildContext context, ConversionTask task) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final outputFile = File(task.outputPath);
       if (await outputFile.exists()) {
@@ -441,14 +456,14 @@ class ConversionQueue extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File di output non trovato')),
+            SnackBar(content: Text('${l10n.error}: ${l10n.outputFileNotFound}')),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore nell\'aprire la cartella: $e')),
+          SnackBar(content: Text('${l10n.error}: $e')),
         );
       }
     }

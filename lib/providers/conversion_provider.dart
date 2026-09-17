@@ -1,10 +1,122 @@
-import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:video_converter_pro/models/conversion_task.dart';
 import 'package:video_converter_pro/services/ffmpeg_service.dart';
 import 'package:video_converter_pro/models/conversion_status.dart';
 import 'package:video_converter_pro/providers/settings_provider.dart';
+import 'package:video_converter_pro/l10n/app_localizations.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
+
+String _queueLabel(String key, [String? localeTag]) {
+  final locale = (localeTag ?? Platform.localeName).toLowerCase();
+  final lang = locale.split(RegExp(r'[_-]')).first;
+  final l10n = lookupAppLocalizations(Locale(lang));
+  switch (key) {
+    case 'calculating':
+      return l10n.calculating;
+    case 'completed':
+      return l10n.completed;
+    case 'file_exists':
+      return l10n.fileExistsStatus;
+    case 'error':
+      return l10n.error;
+    case 'pending':
+      return l10n.waiting;
+    case 'stopped':
+      return l10n.stoppedStatus;
+    case 'remaining':
+      return l10n.remainingLabel;
+    case 'preparing':
+      return l10n.preparing;
+    default:
+      return key;
+  }
+}
+
+String _normalizeProgressMessage(String value, [String? localeTag]) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return value;
+  if (trimmed.startsWith('phase.')) {
+    final locale = (localeTag ?? Platform.localeName).toLowerCase();
+    final lang = locale.split(RegExp(r'[_-]')).first;
+    final l10n = lookupAppLocalizations(Locale(lang));
+    switch (trimmed) {
+      case 'phase.preparing':
+        return l10n.preparing;
+      case 'phase.analyzing':
+        return l10n.analyzingVideo;
+      case 'phase.checking_acceleration':
+        return l10n.checkingAcceleration;
+      case 'phase.drunet.checking':
+        return l10n.drunetChecking;
+      case 'phase.drunet.extract':
+        return l10n.drunetExtractFrames;
+      case 'phase.drunet.denoise':
+        return l10n.drunetDenoisingFrames;
+      case 'phase.drunet.installing':
+        return l10n.drunetInstallingDeps;
+      case 'phase.drunet.install_done':
+        return l10n.drunetDepsInstalled;
+      case 'phase.drunet.not_available':
+        return '${l10n.drunetChecking} (${l10n.error})';
+      case 'phase.drunet.remux':
+        return l10n.drunetRebuildVideo;
+      case 'phase.drunet.done':
+        return l10n.drunetPrepassDone;
+      case 'phase.encoding_start':
+        return l10n.encodingStarting;
+      default:
+        if (trimmed.startsWith('phase.drunet_eta:')) {
+          final eta = trimmed.substring('phase.drunet_eta:'.length).trim();
+          return '${l10n.drunetDenoisingFrames} (${l10n.estimatedTimeLabel} ~ $eta)';
+        }
+        return l10n.preparing;
+    }
+  }
+  final lower = trimmed.toLowerCase();
+  if (lower.startsWith('remaining') ||
+      lower.startsWith('restante') ||
+      lower.startsWith('restant') ||
+      lower.startsWith('verbleibend')) {
+    final i = trimmed.indexOf('~');
+    if (i >= 0) {
+      final eta = trimmed.substring(i + 1).trim();
+      return '${_queueLabel('remaining', localeTag)} ~ $eta';
+    }
+    return _queueLabel('remaining', localeTag);
+  }
+  if (lower.startsWith('preparing') ||
+      lower.startsWith('preparazione') ||
+      lower.startsWith('preparando') ||
+      lower.startsWith('préparation') ||
+      lower.startsWith('vorbereitung')) {
+    return _queueLabel('preparing', localeTag);
+  }
+  return value;
+}
+
+bool _rawProgressMayShowFps(String raw) {
+  final t = raw.trim();
+  if (t.startsWith('phase.drunet.extract')) return true;
+  if (t.startsWith('phase.drunet.denoise')) return true;
+  if (t.startsWith('phase.drunet.remux')) return true;
+  if (t.startsWith('phase.drunet_eta:')) return true;
+  final lower = t.toLowerCase();
+  if (!lower.contains('~')) return false;
+  return lower.startsWith('remaining') ||
+      lower.startsWith('restante') ||
+      lower.startsWith('restant') ||
+      lower.startsWith('verbleibend');
+}
+
+void _applyProcessingFps(ConversionTask task, String rawMsg, double? fps) {
+  if (!_rawProgressMayShowFps(rawMsg)) {
+    task.processingFps = null;
+  } else if (fps != null && fps > 0) {
+    task.processingFps = fps;
+  }
+}
 
 class ConversionProvider with ChangeNotifier {
   final FFmpegService _ffmpegService = FFmpegService();
@@ -193,7 +305,8 @@ class ConversionProvider with ChangeNotifier {
     try {
       task.status = ConversionStatus.processing;
       task.progress = 0.0;
-      task.timeRemaining = 'Calcolando...';
+      task.processingFps = null;
+      task.timeRemaining = _queueLabel('calculating');
       notifyListeners();
 
       final settings = _getSettings();
@@ -222,12 +335,14 @@ class ConversionProvider with ChangeNotifier {
         gpuType: settings.gpuType,
         overwriteExisting: true, // Permetti sovrascrittura quando il task viene riprocessato
         extractAudioFromVideo: task.extractAudioFromVideo,
-        onProgress: (progress, timeRemaining) {
+        onProgress: (progress, timeRemaining, {processingFps}) {
           // Controlla se il task è stato messo in pausa durante la conversione
           try {
             if (!_pausedTasks.containsKey(task.id)) {
               task.progress = progress;
-              task.timeRemaining = timeRemaining;
+              _applyProcessingFps(task, timeRemaining, processingFps);
+              final uiLocale = _settingsProvider?.language ?? Platform.localeName;
+              task.timeRemaining = _normalizeProgressMessage(timeRemaining, uiLocale);
               notifyListeners();
             }
           } catch (e) {
@@ -259,18 +374,21 @@ class ConversionProvider with ChangeNotifier {
         if (result['success'] == true) {
           task.status = ConversionStatus.completed;
           task.progress = 1.0;
-          task.timeRemaining = 'Completato';
+          task.processingFps = null;
+          task.timeRemaining = _queueLabel('completed');
         } else if (result['error'] == 'file_exists') {
           // File esiste già - imposta uno stato speciale per gestire la sovrascrittura
           task.status = ConversionStatus.pending; // Rimetti in pending
           task.error = result['message'] ?? 'File già esistente';
-          task.timeRemaining = 'File esistente';
+          task.processingFps = null;
+          task.timeRemaining = _queueLabel('file_exists');
           // L'UI dovrà gestire questo caso mostrando un dialog
           appLog('File esistente rilevato: ${result['file_path']}');
         } else {
           task.status = ConversionStatus.failed;
           task.error = result['error'] ?? 'Conversione fallita';
-          task.timeRemaining = 'Errore';
+          task.processingFps = null;
+          task.timeRemaining = _queueLabel('error');
         }
       }
       
@@ -282,7 +400,8 @@ class ConversionProvider with ChangeNotifier {
       if (!_pausedTasks.containsKey(task.id)) {
         task.status = ConversionStatus.failed;
         task.error = e.toString();
-        task.timeRemaining = 'Errore';
+        task.processingFps = null;
+        task.timeRemaining = _queueLabel('error');
       }
       
       _progressTimers[task.id]?.cancel();
@@ -354,7 +473,7 @@ class ConversionProvider with ChangeNotifier {
       // Riprova la conversione con sovrascrittura
       task.status = ConversionStatus.pending;
       task.error = null;
-      task.timeRemaining = 'In attesa...';
+      task.timeRemaining = _queueLabel('pending');
       notifyListeners();
       
       // Riavvia la coda se non è già in esecuzione

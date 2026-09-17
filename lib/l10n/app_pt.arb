@@ -162,7 +162,6 @@
   "selectImageForResolution": "Selecionar uma imagem para ver a resolução",
   "resolutionDescription": "Definir uma resolução específica. Se definir apenas largura ou altura, a proporção é mantida.",
   "previewDescription": "Ver a imagem original ou com filtros aplicados",
-  
   "ffmpegVersionCheck": "Verificação de versão do FFmpeg",
   "ffmpegNotInstalled": "FFmpeg não está instalado ou a versão está desatualizada",
   "ffmpegVersionRequired": "Versão necessária: 8.0.1",
@@ -183,14 +182,12 @@
   "skipInstallation": "Pular instalação",
   "manualInstall": "Instalação manual",
   "manualInstallDesc": "Você pode instalar o FFmpeg manualmente usando os comandos abaixo",
-  
   "audioPreview": "Pré-visualização de áudio",
   "audioPreviewDescription": "Ouvir o áudio original ou com filtros aplicados",
   "openWithSystemPlayer": "Abrir com player do sistema",
   "audioFileReady": "Arquivo de áudio pronto para reprodução",
   "modifiedAudioGenerated": "Áudio modificado gerado (primeiros 10 segundos)",
   "fileWillOpenWithDefaultPlayer": "O arquivo será aberto com o player de áudio padrão do sistema",
-  
   "videoQualityMode": "Modo de qualidade de vídeo",
   "constantQualityLabel": "CRF (Qualidade constante)",
   "constantBitrateLabel": "Taxa de bits (Tamanho de arquivo)",
@@ -215,7 +212,6 @@
   "videoAnalyzedNoIssues": "Vídeo analisado - Sem problemas críticos",
   "problemsDetectedRecommendations": "{problems} problemas detectados - {recommendations} recomendações",
   "intelligentVideoAnalysis": "Análise inteligente de vídeo",
-  
   "automaticOptimizations": "Otimizações automáticas",
   "autoOptimization": "Otimização automática",
   "autoOptimizationDesc": "Aplicar melhores configurações baseadas em análise",
@@ -231,7 +227,8 @@
   "compressionFixDesc": "Remove artefatos de compressão pesada",
   "filmRestoration": "Restauração de filme",
   "filmRestorationDesc": "Otimizado para vídeos antigos e filmes",
-  
+  "smoothCleanLook": "Suave / limpo",
+  "smoothCleanLookDesc": "Menos granulação e ruído; aspecto mais suave (mais rápido que denoise IA)",
   "fundamentalFilters": "Filtros fundamentais",
   "qualityAndDetails": "Qualidade e detalhes",
   "noiseReductionLabel": "Redução de ruído",
@@ -239,14 +236,12 @@
   "redBalance": "Balanço vermelho",
   "greenBalance": "Balanço verde",
   "blueBalance": "Balanço azul",
-  "advancedCorrections": "Correções avançadas",
   "deinterlacingLabel": "Desentrelaçamento",
   "deinterlacingDesc": "Remove linhas entrelaçadas de vídeos mais antigos",
   "stabilizationLabel": "Estabilização",
   "stabilizationDesc": "Reduz tremores da câmera",
   "detailEnhancement": "Aprimoramento de detalhes",
   "detailEnhancementDesc": "Melhora a definição de detalhes",
-  
   "gpuAccelerationLabel": "Aceleração GPU",
   "useGpuForConversion": "Usar GPU para conversão",
   "useGpuForConversionDesc": "Move codificação de vídeo para placa gráfica (se disponível)",
@@ -257,21 +252,17 @@
   "gpuPresetMediumDesc": "Equilibrado entre velocidade e qualidade (recomendado)",
   "gpuPresetHighQuality": "Alta qualidade",
   "gpuPresetHighQualityDesc": "Melhor qualidade possível, conversão mais lenta",
-  
   "drunetDenoisingTitle": "DRUNet (AI denoising)",
-  "drunetDenoisingDesc": "Deep learning denoising when drunet_model.pth is in models/drunet/. On by default.",
+  "drunetDenoisingDesc": "Redução de ruído com IA (não é upscaling). Pré-passo com Python (NumPy, OpenCV) e scripts/python/drunet_denoiser.py; drunet_model.pth opcional para pesos neurais futuros. Não aumenta resolução—use super-resolução.",
   "sceneDetectionTitle": "Scene detection (PySceneDetect)",
   "sceneDetectionDesc": "Scene analysis for smarter encoding hints. On by default.",
   "useSceneOptimizationTitle": "Scene-based optimization",
   "useSceneOptimizationDesc": "Apply bitrate/quality recommendations from scene analysis.",
-  
-  "colorProfiles": "Perfis de cor",
   "noneLabel": "Nenhum",
   "vividLabel": "Vívido",
   "cinematicLabel": "Cinematográfico",
   "blackWhiteLabel": "Preto e branco",
   "sepiaLabel": "Sépia",
-  
   "imageFiltersTitle": "Filtros de imagem",
   "qualityEnhancementLabel": "Aprimoramento de qualidade",
   "imageUpscaling": "Upscaling de imagem",
@@ -280,7 +271,6 @@
   "upscalingFactor": "Fator de upscaling",
   "upscalingDisabledWithCustom": "O upscaling está desabilitado ao usar resolução personalizada.",
   "imageColorProfiles": "Perfis de cor",
-
   "userGuideMenu": "Guia",
   "userGuideTitle": "Guia de utilização",
   "userGuideIntro": "Resumo do FE Media Converter: escolha o tipo de média, adicione ficheiros, formato e qualidade, ajuste filtros se precisar e use a fila para converter. As definições mantêm-se entre sessões.",
@@ -302,7 +292,6 @@
   "guideSectionModelsBody": "DRUNet e os scripts de cenas usam o ambiente Python da app. Na primeira execução pode pedir-se a descarga dos pesos DRUNet (~125 MB). Pode alterar a pasta de modelos; existe cache por omissão na pasta pessoal.",
   "guideSectionDepsTitle": "FFmpeg e verificação",
   "guideSectionDepsBody": "O FFmpeg deve estar instalado e razoavelmente atualizado. Se aparecer o ecrã de dependências, siga a instalação guiada ou manual e tente de novo. Python 3 e pip/venv melhoram as funções opcionais.",
-
   "pythonSetupTitle": "Componentes Python opcionais",
   "pythonSetupIntro": "O DRUNet e a deteção de cenas usam um ambiente virtual Python local (PyTorch, etc.). A transferência pode ser grande e faz-se na primeira execução da app, não durante a instalação do pacote.\n\nInstale agora ou ignore e use o resto sem estas funções.",
   "pythonSetupInstall": "Transferir e instalar",
@@ -313,9 +302,86 @@
   "pythonSetupFailed": "Falhou (código: {code}). Tente novamente ou execute scripts/python/setup_python_env.sh manualmente.",
   "@pythonSetupFailed": {
     "placeholders": {
-      "code": {"type": "int"}
+      "code": {
+        "type": "int"
+      }
     }
   },
-  "pythonSetupRetry": "Tentar de novo"
+  "pythonSetupRetry": "Tentar de novo",
+  "benchmarkRunStart": "Running benchmark...",
+  "benchmarkRunButton": "Run auto benchmark",
+  "benchmarkRunningButton": "Benchmark running...",
+  "benchmarkDone": "Benchmark done",
+  "benchmarkFailed": "Benchmark failed",
+  "benchmarkHistoryTitle": "Benchmark history",
+  "benchmarkHistoryEmpty": "No benchmark history yet",
+  "benchmarkPhaseStarting": "Starting benchmark",
+  "benchmarkPhaseCollecting": "Collecting ffmpeg and GPU info",
+  "benchmarkPhaseFast": "Benchmarking fast preset",
+  "benchmarkPhaseMedium": "Benchmarking medium preset",
+  "benchmarkPhaseHighQuality": "Benchmarking high quality preset",
+  "benchmarkPhaseSelecting": "Selecting best preset",
+  "benchmarkPhaseDone": "Done",
+  "outputFileNotFound": "Output file not found",
+  "remainingLabel": "Remaining",
+  "fileExistsStatus": "File already exists",
+  "stoppedStatus": "Stopped",
+  "upscalingWithFfmpeg": "Upscaling with FFmpeg...",
+  "downloadConnecting": "Connecting",
+  "drunetDownloadingLabel": "Downloading DRUNet",
+  "retryingWithMirror": "Retrying with alternate mirror",
+  "downloadViaPythonScript": "Downloading via Python script",
+  "previewFileNotCreated": "Preview file not created",
+  "previewGenerationError": "Preview generation error",
+  "preparing": "Preparando...",
+  "analyzingVideo": "Analisando vídeo...",
+  "checkingAcceleration": "Verificando aceleração GPU/filtros...",
+  "drunetChecking": "DRUNet: verificando dependências e modelo...",
+  "drunetExtractFrames": "DRUNet: extraindo frames...",
+  "drunetDenoisingFrames": "DRUNet: denoise IA em andamento (pode demorar)...",
+  "drunetRebuildVideo": "DRUNet: reconstruindo vídeo...",
+  "drunetPrepassDone": "Pré-pass DRUNet concluído, iniciando codificação...",
+  "encodingStarting": "Iniciando codificação...",
+  "estimatedTimeLabel": "Tempo estimado",
+  "drunetInstallingDeps": "DRUNet: instalando dependências Python...",
+  "drunetDepsInstalled": "DRUNet: dependências instaladas, continuando...",
+  "drunetEnvPanelTitle": "Instalar / reparar DRUNet",
+  "drunetEnvPanelDesc": "Cria scripts/python/venv e instala NumPy e OpenCV. Use se o denoise IA falhar por pacotes Python em falta.",
+  "drunetInstallRepairButton": "Instalar / reparar ambiente",
+  "drunetRefreshEnvStatus": "Verificar estado",
+  "drunetEnvCheckingStatus": "A verificar…",
+  "drunetEnvStatusReady": "Ambiente pronto",
+  "drunetEnvStatusNotReady": "Ambiente não pronto",
+  "drunetEnvStatusUnknown": "Estado não verificado",
+  "drunetEnvInstallSuccess": "O ambiente Python DRUNet está pronto.",
+  "drunetEnvInstallFailed": "Falha na configuração DRUNet: {error}",
+  "@drunetEnvInstallFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "conversionProcessingRate": "~{fps} fps processados",
+  "@conversionProcessingRate": {
+    "placeholders": {
+      "fps": {
+        "type": "String"
+      }
+    }
+  },
+  "donateNow": "Doar agora",
+  "drunetModeLabel": "Modo DRUNet",
+  "drunetModeDenoise": "Redução de ruído",
+  "drunetModeDeblur": "Redução de desfocagem",
+  "drunetModeUpscale": "Aumento de escala",
+  "drunetModeJpegRestore": "Restauração JPEG",
+  "drunetUpscaleFactor": "Fator de escala",
+  "drunetDeblurStrength": "Intensidade de desfocagem",
+  "drunetNoiseLevel": "Nível de ruído",
+  "drunetDeviceLabel": "Dispositivo",
+  "drunetDeviceAuto": "Automático",
+  "drunetDeviceCPU": "CPU",
+  "drunetDeviceCUDA": "CUDA (NVIDIA)",
+  "enableDRUNet": "Ativar DRUNet (imagens)"
 }
-

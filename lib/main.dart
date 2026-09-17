@@ -281,10 +281,14 @@ class _VideoConverterAppState extends State<VideoConverterApp> {
     );
   }
 
-  /// Ad ogni avvio: se FFmpeg/dipendenze ok e manca il modello DRUNet, scarica automaticamente (~125 MB).
+  /// Se il modello DRUNet non è presente e l'utente non ha scelto di saltarlo,
+  /// mostra il dialogo con la scelta: scarica ora o salta.
   Future<void> _ensureDrunetModelAtStartup() async {
     if (!mounted) return;
     if (widget.dependencyStatus['available'] != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(ModelsManagerService.prefsKeyDRUNetSkipped) == true) return;
 
     final ctx = _dialogContext;
     if (ctx == null) return;
@@ -298,7 +302,7 @@ class _VideoConverterAppState extends State<VideoConverterApp> {
     if (!mounted) return;
     if (ready) return;
 
-    await showDialog<void>(
+    await showDialog<bool>(
       context: ctx,
       barrierDismissible: false,
       builder: (context) => const ModelsDownloadDialog(),

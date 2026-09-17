@@ -9,6 +9,28 @@ class QualitySettings extends StatelessWidget {
 
   const QualitySettings({super.key, this.mediaType});
 
+  Future<void> _runBenchmark(BuildContext context, SettingsProvider provider) async {
+    if (provider.isBenchmarkRunning) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.benchmarkRunStart)),
+    );
+    final r = await provider.runUniversalBenchmark();
+    if (!context.mounted) return;
+    if (r['success'] == true) {
+      final preset = r['bestPreset'] ?? 'medium';
+      final codec = r['codec'] ?? 'unknown';
+      messenger.showSnackBar(
+        SnackBar(content: Text('${l10n.benchmarkDone}. Best preset: $preset ($codec)')),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(content: Text('${l10n.benchmarkFailed}: ${r['error'] ?? 'unknown error'}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
@@ -44,6 +66,37 @@ class QualitySettings extends StatelessWidget {
                       const SizedBox(height: 16),
                       _buildVideoQualityMode(settingsProvider, l10n),
                       const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: settingsProvider.isBenchmarkRunning
+                                  ? null
+                                  : () => _runBenchmark(context, settingsProvider),
+                              icon: const Icon(Icons.speed),
+                              label: Text(
+                                settingsProvider.isBenchmarkRunning
+                                    ? l10n.benchmarkRunningButton
+                                    : l10n.benchmarkRunButton,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (settingsProvider.isBenchmarkRunning) ...[
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(value: settingsProvider.benchmarkProgress),
+                        const SizedBox(height: 6),
+                        Text(
+                          settingsProvider.benchmarkPhase.isEmpty
+                              ? l10n.benchmarkRunStart
+                              : _localizePhase(settingsProvider.benchmarkPhase, l10n),
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      _buildBenchmarkHistory(settingsProvider, l10n),
+                      const SizedBox(height: 16),
                       _buildVideoQualitySlider(settingsProvider, l10n),
                     ],
                   ),
@@ -68,6 +121,66 @@ class QualitySettings extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildBenchmarkHistory(SettingsProvider provider, AppLocalizations l10n) {
+    final history = provider.benchmarkHistory;
+    if (history.isEmpty) {
+      return Text(
+        l10n.benchmarkHistoryEmpty,
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.benchmarkHistoryTitle,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+        ...history.take(3).map((entry) {
+          final ts = entry['timestamp']?.toString() ?? '';
+          final date = ts.isNotEmpty ? ts.replaceFirst('T', ' ').split('.').first : 'unknown';
+          final best = entry['bestPreset']?.toString() ?? 'unknown';
+          final codec = entry['codec']?.toString() ?? 'unknown';
+          final scores = entry['scoresFps'] is Map
+              ? Map<String, dynamic>.from(entry['scoresFps'] as Map)
+              : <String, dynamic>{};
+          final fast = (scores['fast'] as num?)?.toStringAsFixed(1) ?? '-';
+          final med = (scores['medium'] as num?)?.toStringAsFixed(1) ?? '-';
+          final hq = (scores['high_quality'] as num?)?.toStringAsFixed(1) ?? '-';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              '$date | $codec | best: $best | fps f/m/h: $fast / $med / $hq',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  String _localizePhase(String phaseKey, AppLocalizations l10n) {
+    switch (phaseKey) {
+      case 'phase.starting':
+        return l10n.benchmarkPhaseStarting;
+      case 'phase.collecting':
+        return l10n.benchmarkPhaseCollecting;
+      case 'phase.benchmark_fast':
+        return l10n.benchmarkPhaseFast;
+      case 'phase.benchmark_medium':
+        return l10n.benchmarkPhaseMedium;
+      case 'phase.benchmark_high_quality':
+        return l10n.benchmarkPhaseHighQuality;
+      case 'phase.selecting_best':
+        return l10n.benchmarkPhaseSelecting;
+      case 'phase.done':
+        return l10n.benchmarkPhaseDone;
+      default:
+        return phaseKey;
+    }
   }
 
   Widget _buildVideoCodecSelector(SettingsProvider provider, AppLocalizations l10n) {

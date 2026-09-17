@@ -5,6 +5,7 @@ import 'image_filters.dart';
 import 'conversion_status.dart';
 
 class ConversionTask {
+  static int _nextId = 0;
   final String id;
   final String inputPath;
   final String outputPath;
@@ -24,6 +25,8 @@ class ConversionTask {
   final bool extractAudioFromVideo;
   ConversionStatus status;
   double progress;
+  /// Video frames processed per second when FFmpeg or DRUNet reports it.
+  double? processingFps;
   String? error;
   String timeRemaining;
   final DateTime createdAt;
@@ -48,10 +51,10 @@ class ConversionTask {
     required this.audioFilters,
     required this.imageFilters,
     this.extractAudioFromVideo = false,
-  })  : id = DateTime.now().millisecondsSinceEpoch.toString(),
+  })  : id = '${DateTime.now().millisecondsSinceEpoch}_${_nextId++}',
         status = ConversionStatus.pending,
         progress = 0.0,
-        timeRemaining = 'In attesa',
+        timeRemaining = 'Waiting',
         createdAt = DateTime.now();
 
   String get fileName => inputPath.split('/').last;
@@ -60,15 +63,15 @@ class ConversionTask {
   String get statusText {
     switch (status) {
       case ConversionStatus.pending:
-        return 'In attesa';
+        return 'Pending';
       case ConversionStatus.processing:
-        return 'Elaborazione';
+        return 'Processing';
       case ConversionStatus.paused:
-        return 'In pausa';
+        return 'Paused';
       case ConversionStatus.completed:
-        return 'Completato';
+        return 'Completed';
       case ConversionStatus.failed:
-        return 'Fallito';
+        return 'Failed';
     }
   }
 
@@ -133,7 +136,7 @@ class ConversionTask {
     if (status == ConversionStatus.processing || status == ConversionStatus.paused) {
       status = ConversionStatus.failed;
       error = 'Conversione interrotta dall\'utente';
-      timeRemaining = 'Interrotto';
+      timeRemaining = 'Stopped';
     }
   }
 
@@ -191,7 +194,7 @@ class ConversionTask {
     );
     task.progress = map['progress'] ?? 0.0;
     task.error = map['error'];
-    task.timeRemaining = map['timeRemaining'] ?? 'In attesa';
+    task.timeRemaining = map['timeRemaining'] ?? 'Waiting';
     
     return task;
   }

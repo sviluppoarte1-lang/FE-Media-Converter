@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_converter_pro/models/video_filters.dart';
 import 'package:video_converter_pro/l10n/app_localizations.dart';
+import 'package:video_converter_pro/services/drunet_service.dart';
 import 'package:video_converter_pro/services/video_pre_processor.dart';
 
 class VideoFiltersPanel extends StatefulWidget {
@@ -26,6 +27,9 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
   bool _isAnalyzingQuality = false;
   List<String> _detectedIssues = [];
   List<String> _recommendations = [];
+  bool? _drunetDepsReady;
+  bool _drunetDepsChecking = false;
+  bool _drunetDepsInstalling = false;
 
   @override
   void initState() {
@@ -34,6 +38,8 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
     if (widget.inputFilePath != null) {
       _analyzeVideoQuality();
     }
+    _drunetDepsChecking = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshDrunetDepsStatus());
   }
 
   Future<void> _analyzeVideoQuality() async {
@@ -151,6 +157,15 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
         break;
       case 'ultra_quality':
         newFilters = VideoFilters.getUltraQualityPreset();
+        break;
+      case 'smooth_clean':
+        newFilters = VideoFilters.smoothCleanLookDefaults();
+        break;
+      case 'speed_first':
+        newFilters = VideoFilters.speedFirstDefaults();
+        break;
+      case 'balanced':
+        newFilters = VideoFilters.balancedDefaults();
         break;
       default:
         newFilters = VideoFilters.maximumQualityDefaults();
@@ -415,6 +430,24 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
               onSelected: () => _applyOptimization('film_restoration'),
               color: Colors.brown,
             ),
+            _OptimizationChip(
+              label: l10n.smoothCleanLook,
+              description: l10n.smoothCleanLookDesc,
+              onSelected: () => _applyOptimization('smooth_clean'),
+              color: Colors.teal,
+            ),
+            _OptimizationChip(
+              label: 'Speed first',
+              description: 'Higher FPS, lighter filters, GPU-focused encode',
+              onSelected: () => _applyOptimization('speed_first'),
+              color: Colors.lightGreen,
+            ),
+            _OptimizationChip(
+              label: 'Balanced',
+              description: 'Balanced quality and speed with auto GPU policy',
+              onSelected: () => _applyOptimization('balanced'),
+              color: Colors.indigo,
+            ),
           ],
         ),
       ],
@@ -529,6 +562,122 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
     );
   }
 
+  Future<void> _refreshDrunetDepsStatus() async {
+    if (!mounted) return;
+    setState(() => _drunetDepsChecking = true);
+    final ok = await DRUNetService.checkDependencies();
+    if (!mounted) return;
+    setState(() {
+      _drunetDepsReady = ok;
+      _drunetDepsChecking = false;
+    });
+  }
+
+  Future<void> _installDrunetDeps() async {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _drunetDepsInstalling = true);
+    final r = await DRUNetService.installDependencies();
+    if (!mounted) return;
+    setState(() => _drunetDepsInstalling = false);
+    final success = r['success'] == true;
+    if (success) {
+      setState(() => _drunetDepsReady = true);
+      messenger.showSnackBar(SnackBar(content: Text(l10n.drunetEnvInstallSuccess)));
+    } else {
+      final err = r['error']?.toString() ?? '';
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.drunetEnvInstallFailed(err)),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+    await _refreshDrunetDepsStatus();
+  }
+
+  Widget _buildDrunetEnvPanel(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    String statusText;
+    Color? statusColor;
+    if (_drunetDepsChecking) {
+      statusText = l10n.drunetEnvCheckingStatus;
+      statusColor = theme.colorScheme.onSurfaceVariant;
+    } else if (_drunetDepsReady == true) {
+      statusText = l10n.drunetEnvStatusReady;
+      statusColor = Colors.green;
+    } else if (_drunetDepsReady == false) {
+      statusText = l10n.drunetEnvStatusNotReady;
+      statusColor = theme.colorScheme.tertiary;
+    } else {
+      statusText = l10n.drunetEnvStatusUnknown;
+      statusColor = theme.colorScheme.onSurfaceVariant;
+    }
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.drunetEnvPanelTitle,
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.drunetEnvPanelDesc,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (_drunetDepsChecking)
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
+                  )
+                else
+                  Icon(
+                    _drunetDepsReady == true ? Icons.check_circle_outline : Icons.info_outline,
+                    size: 20,
+                    color: statusColor,
+                  ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 13)),
+                ),
+                TextButton(
+                  onPressed: (_drunetDepsChecking || _drunetDepsInstalling) ? null : _refreshDrunetDepsStatus,
+                  child: Text(l10n.drunetRefreshEnvStatus),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            FilledButton.icon(
+              onPressed: _drunetDepsInstalling ? null : _installDrunetDeps,
+              icon: _drunetDepsInstalling
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    )
+                  : const Icon(Icons.handyman_outlined, size: 20),
+              label: Text(l10n.drunetInstallRepairButton),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAdvancedCorrectionsContent(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,8 +704,139 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
           title: Text(l10n.drunetDenoisingTitle),
           subtitle: Text(l10n.drunetDenoisingDesc),
           value: _filters.enableDRUNetDenoising,
-          onChanged: (value) => _updateFilters(_filters.copyWith(enableDRUNetDenoising: value)),
+          onChanged: (value) => _updateFilters(_filters.copyWith(
+            enableDRUNetDenoising: value,
+            drunetMode: value ? _filters.drunetMode : 'denoise',
+          )),
         ),
+        if (_filters.enableDRUNetDenoising) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonFormField<String>(
+              value: _filters.drunetMode,
+              decoration: InputDecoration(
+                labelText: l10n.drunetModeLabel,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: [
+                DropdownMenuItem(value: 'denoise', child: Text(l10n.drunetModeDenoise)),
+                DropdownMenuItem(value: 'deblur', child: Text(l10n.drunetModeDeblur)),
+                DropdownMenuItem(value: 'upscale', child: Text(l10n.drunetModeUpscale)),
+                DropdownMenuItem(value: 'jpeg_restore', child: Text(l10n.drunetModeJpegRestore)),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  _updateFilters(_filters.copyWith(drunetMode: value));
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_filters.drunetMode == 'denoise')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(l10n.drunetNoiseLevel, style: const TextStyle(fontSize: 13)),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _filters.drunetNoiseLevel.toDouble(),
+                      min: 1,
+                      max: 50,
+                      divisions: 49,
+                      label: _filters.drunetNoiseLevel.toString(),
+                      onChanged: (value) => _updateFilters(
+                        _filters.copyWith(drunetNoiseLevel: value.round()),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 30,
+                    child: Text('${_filters.drunetNoiseLevel}', style: const TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          if (_filters.drunetMode == 'upscale')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(l10n.drunetUpscaleFactor, style: const TextStyle(fontSize: 13)),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _filters.drunetUpscaleFactor,
+                      min: 1.0,
+                      max: 4.0,
+                      divisions: 6,
+                      label: '${_filters.drunetUpscaleFactor}x',
+                      onChanged: (value) => _updateFilters(
+                        _filters.copyWith(drunetUpscaleFactor: value),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 30,
+                    child: Text('${_filters.drunetUpscaleFactor}x', style: const TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          if (_filters.drunetMode == 'deblur')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(l10n.drunetDeblurStrength, style: const TextStyle(fontSize: 13)),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _filters.drunetDeblurStrength,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 10,
+                      label: _filters.drunetDeblurStrength.toStringAsFixed(1),
+                      onChanged: (value) => _updateFilters(
+                        _filters.copyWith(drunetDeblurStrength: value),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 30,
+                    child: Text('${_filters.drunetDeblurStrength.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonFormField<String>(
+              value: _filters.drunetDevice,
+              decoration: InputDecoration(
+                labelText: l10n.drunetDeviceLabel,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: [
+                DropdownMenuItem(value: 'auto', child: Text(l10n.drunetDeviceAuto)),
+                DropdownMenuItem(value: 'cpu', child: Text(l10n.drunetDeviceCPU)),
+                DropdownMenuItem(value: 'cuda', child: Text(l10n.drunetDeviceCUDA)),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  _updateFilters(_filters.copyWith(drunetDevice: value));
+                }
+              },
+            ),
+          ),
+        ],
+        _buildDrunetEnvPanel(l10n),
         SwitchListTile(
           title: Text(l10n.sceneDetectionTitle),
           subtitle: Text(l10n.sceneDetectionDesc),

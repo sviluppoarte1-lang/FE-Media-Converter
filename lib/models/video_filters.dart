@@ -41,7 +41,10 @@ class VideoFilters {
   String gpuEncodingPreset;
 
   bool enableDRUNetDenoising;
+  String drunetMode;
   int drunetNoiseLevel;
+  double drunetUpscaleFactor;
+  double drunetDeblurStrength;
   String drunetDevice;
 
   bool enableSceneDetection;
@@ -88,7 +91,10 @@ class VideoFilters {
     this.enableGpuFilters = true,
     this.gpuEncodingPreset = 'medium',
     this.enableDRUNetDenoising = false,
+    this.drunetMode = 'denoise',
     this.drunetNoiseLevel = 7,
+    this.drunetUpscaleFactor = 2.0,
+    this.drunetDeblurStrength = 0.5,
     this.drunetDevice = 'auto',
     this.enableSceneDetection = false,
     this.sceneDetectionMethod = 'adaptive',
@@ -137,7 +143,10 @@ class VideoFilters {
       enableGpuFilters: true,
       gpuEncodingPreset: 'high_quality',
       enableDRUNetDenoising: true,
+      drunetMode: 'denoise',
       drunetNoiseLevel: 7,
+      drunetUpscaleFactor: 2.0,
+      drunetDeblurStrength: 0.5,
       drunetDevice: 'auto',
       enableSceneDetection: true,
       sceneDetectionMethod: 'adaptive',
@@ -184,7 +193,10 @@ class VideoFilters {
     bool? enableGpuFilters,
     String? gpuEncodingPreset,
     bool? enableDRUNetDenoising,
+    String? drunetMode,
     int? drunetNoiseLevel,
+    double? drunetUpscaleFactor,
+    double? drunetDeblurStrength,
     String? drunetDevice,
     bool? enableSceneDetection,
     String? sceneDetectionMethod,
@@ -229,7 +241,10 @@ class VideoFilters {
       enableGpuFilters: enableGpuFilters ?? this.enableGpuFilters,
       gpuEncodingPreset: gpuEncodingPreset ?? this.gpuEncodingPreset,
       enableDRUNetDenoising: enableDRUNetDenoising ?? this.enableDRUNetDenoising,
+      drunetMode: drunetMode ?? this.drunetMode,
       drunetNoiseLevel: drunetNoiseLevel ?? this.drunetNoiseLevel,
+      drunetUpscaleFactor: drunetUpscaleFactor ?? this.drunetUpscaleFactor,
+      drunetDeblurStrength: drunetDeblurStrength ?? this.drunetDeblurStrength,
       drunetDevice: drunetDevice ?? this.drunetDevice,
       enableSceneDetection: enableSceneDetection ?? this.enableSceneDetection,
       sceneDetectionMethod: sceneDetectionMethod ?? this.sceneDetectionMethod,
@@ -277,7 +292,10 @@ class VideoFilters {
       'enableGpuFilters': enableGpuFilters,
       'gpuEncodingPreset': gpuEncodingPreset,
       'enableDRUNetDenoising': enableDRUNetDenoising,
+      'drunetMode': drunetMode,
       'drunetNoiseLevel': drunetNoiseLevel,
+      'drunetUpscaleFactor': drunetUpscaleFactor,
+      'drunetDeblurStrength': drunetDeblurStrength,
       'drunetDevice': drunetDevice,
       'enableSceneDetection': enableSceneDetection,
       'sceneDetectionMethod': sceneDetectionMethod,
@@ -326,9 +344,12 @@ class VideoFilters {
       enableGpuFilters: map['enableGpuFilters'] ?? d.enableGpuFilters,
       gpuEncodingPreset: map['gpuEncodingPreset'] as String? ?? d.gpuEncodingPreset,
       enableDRUNetDenoising: map['enableDRUNetDenoising'] ?? d.enableDRUNetDenoising,
+      drunetMode: map['drunetMode'] as String? ?? d.drunetMode,
       drunetNoiseLevel: map['drunetNoiseLevel'] is int
           ? map['drunetNoiseLevel'] as int
           : (map['drunetNoiseLevel'] as num?)?.toInt() ?? d.drunetNoiseLevel,
+      drunetUpscaleFactor: _mapDouble(map['drunetUpscaleFactor'], d.drunetUpscaleFactor),
+      drunetDeblurStrength: _mapDouble(map['drunetDeblurStrength'], d.drunetDeblurStrength),
       drunetDevice: map['drunetDevice'] as String? ?? d.drunetDevice,
       enableSceneDetection: map['enableSceneDetection'] ?? d.enableSceneDetection,
       sceneDetectionMethod: map['sceneDetectionMethod'] as String? ?? d.sceneDetectionMethod,
@@ -384,7 +405,10 @@ class VideoFilters {
     enableGpuFilters = d.enableGpuFilters;
     gpuEncodingPreset = d.gpuEncodingPreset;
     enableDRUNetDenoising = d.enableDRUNetDenoising;
+    drunetMode = d.drunetMode;
     drunetNoiseLevel = d.drunetNoiseLevel;
+    drunetUpscaleFactor = d.drunetUpscaleFactor;
+    drunetDeblurStrength = d.drunetDeblurStrength;
     drunetDevice = d.drunetDevice;
     enableSceneDetection = d.enableSceneDetection;
     sceneDetectionMethod = d.sceneDetectionMethod;
@@ -474,6 +498,73 @@ class VideoFilters {
       compressionCleanup: 0.6,
       enableGpuAcceleration: true,
       gpuEncodingPreset: 'medium',
+    );
+  }
+
+  /// Riduce grana / rumore di fondo e tende a un look più morbido (veloce con HQDN3D + temporale).
+  static VideoFilters smoothCleanLookDefaults() {
+    return VideoFilters(
+      denoiseStrength: 0.28,
+      advancedDenoiseMethod: 'hqdn3d',
+      noiseReductionMethod: 'medium',
+      temporalDenoise: 0.55,
+      sharpness: 1.04,
+      enableAdaptiveSharpening: false,
+      enableDetailEnhancement: false,
+      unsharpMask: 0.08,
+      textureBoost: 0.05,
+      advancedDebandingMethod: 'gradfun',
+      enableGpuAcceleration: true,
+      gpuEncodingPreset: 'medium',
+      enableDRUNetDenoising: false,
+    );
+  }
+
+  /// Preset aggressivo orientato a FPS alti (GPU encode + filtri leggeri).
+  static VideoFilters speedFirstDefaults() {
+    return VideoFilters(
+      denoiseStrength: 0.08,
+      advancedDenoiseMethod: 'hqdn3d',
+      noiseReductionMethod: 'light',
+      temporalDenoise: 0.12,
+      sharpness: 1.02,
+      enableAdaptiveSharpening: false,
+      enableDetailEnhancement: false,
+      unsharpMask: 0.0,
+      textureBoost: 0.0,
+      advancedDebandingMethod: 'none',
+      superResolutionMethod: 'none',
+      enableArtifactRemoval: false,
+      compressionCleanup: 0.0,
+      enableGpuAcceleration: true,
+      gpuEncodingPreset: 'fast',
+      enableDRUNetDenoising: false,
+      enableSceneDetection: false,
+      useSceneBasedOptimization: false,
+    );
+  }
+
+  /// Preset bilanciato per uso quotidiano: qualità buona con prestazioni stabili.
+  static VideoFilters balancedDefaults() {
+    return VideoFilters(
+      denoiseStrength: 0.18,
+      advancedDenoiseMethod: 'hqdn3d',
+      noiseReductionMethod: 'medium',
+      temporalDenoise: 0.30,
+      sharpness: 1.08,
+      enableAdaptiveSharpening: true,
+      enableDetailEnhancement: false,
+      unsharpMask: 0.08,
+      textureBoost: 0.08,
+      advancedDebandingMethod: 'gradfun',
+      superResolutionMethod: 'none',
+      enableArtifactRemoval: true,
+      compressionCleanup: 0.35,
+      enableGpuAcceleration: true,
+      gpuEncodingPreset: 'medium',
+      enableDRUNetDenoising: false,
+      enableSceneDetection: false,
+      useSceneBasedOptimization: false,
     );
   }
 

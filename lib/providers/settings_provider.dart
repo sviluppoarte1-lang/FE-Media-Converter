@@ -5,6 +5,7 @@ import 'package:video_converter_pro/models/video_filters.dart';
 import 'package:video_converter_pro/models/audio_filters.dart';
 import 'package:video_converter_pro/models/image_filters.dart';
 import 'package:video_converter_pro/l10n/app_localizations.dart';
+import 'package:video_converter_pro/services/benchmark_service.dart';
 import 'package:video_converter_pro/utils/app_log.dart';
 
 class SettingsProvider with ChangeNotifier {
@@ -39,6 +40,9 @@ class SettingsProvider with ChangeNotifier {
   static const String _audioFiltersKey = 'audio_filters';
   static const String _imageFiltersKey = 'image_filters';
   static const String _modelsDirectoryKey = 'models_directory';
+  static const String _autoBenchmarkPresetKey = 'auto_benchmark_preset';
+  static const String _benchmarkHistoryKey = 'benchmark_history';
+  static const String _benchmarkSignatureKey = 'benchmark_signature';
 
   String _outputFolder = '';
   String _modelsDirectory = ''; // Directory per i modelli (VRT, DRUNet, ecc.)
@@ -59,6 +63,12 @@ class SettingsProvider with ChangeNotifier {
   String _gpuType = 'auto';
   String _language = 'en';
   bool _extractAudioFromVideo = false;
+  String _autoBenchmarkPreset = 'medium';
+  bool _isBenchmarkRunning = false;
+  double _benchmarkProgress = 0.0;
+  String _benchmarkPhase = '';
+  String _lastBenchmarkSignature = '';
+  List<Map<String, dynamic>> _benchmarkHistory = <Map<String, dynamic>>[];
 
   // Getters
   String get outputFolder => _outputFolder;
@@ -80,7 +90,13 @@ class SettingsProvider with ChangeNotifier {
   String get language => _language;
   bool get extractAudioFromVideo => _extractAudioFromVideo;
   String get modelsDirectory => _modelsDirectory;
-  
+  String get autoBenchmarkPreset => _autoBenchmarkPreset;
+  bool get isBenchmarkRunning => _isBenchmarkRunning;
+  double get benchmarkProgress => _benchmarkProgress;
+  String get benchmarkPhase => _benchmarkPhase;
+  List<Map<String, dynamic>> get benchmarkHistory =>
+      List<Map<String, dynamic>>.unmodifiable(_benchmarkHistory);
+
   String get currentLanguageName {
     return getLanguageName(_language);
   }
@@ -123,7 +139,24 @@ class SettingsProvider with ChangeNotifier {
     _language = prefs.getString(_languageKey) ?? 'en';
     _extractAudioFromVideo = prefs.getBool(_extractAudioFromVideoKey) ?? false;
     _modelsDirectory = prefs.getString(_modelsDirectoryKey) ?? '';
+    _autoBenchmarkPreset = prefs.getString(_autoBenchmarkPresetKey) ?? 'medium';
+    _lastBenchmarkSignature = prefs.getString(_benchmarkSignatureKey) ?? '';
+    final historyRaw = prefs.getString(_benchmarkHistoryKey);
+    if (historyRaw != null && historyRaw.isNotEmpty) {
+      try {
+        final decoded = json.decode(historyRaw);
+        if (decoded is List) {
+          _benchmarkHistory = decoded
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+      } catch (e) {
+        appLog('⚠️ Failed to parse benchmark history: $e');
+      }
+    }
     notifyListeners();
+    _maybeAutoRerunBenchmark();
   }
 
   // Metodi esistenti...
@@ -236,6 +269,115 @@ class SettingsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setAutoBenchmarkPreset(String preset) async {
+    var effectivePreset = preset;
+    final smoke = await BenchmarkService.validatePresetCompatibility(
+      useGpu: _useGpu,
+      gpuType: _gpuType,
+      preferredCodec: _defaultVideoCodec,
+      preset: effectivePreset,
+    );
+    if (smoke['success'] != true) {
+      appLog('⚠️ Benchmark preset "$preset" not compatible, fallback to medium');
+      effectivePreset = 'medium';
+      final mediumSmoke = await BenchmarkService.validatePresetCompatibility(
+        useGpu: _useGpu,
+        gpuType: _gpuType,
+        preferredCodec: _defaultVideoCodec,
+        preset: effectivePreset,
+      );
+      if (mediumSmoke['success'] != true) {
+        appLog('⚠️ Medium preset failed smoke-test, fallback to fast');
+        effectivePreset = 'fast';
+      }
+    }
+
+    _autoBenchmarkPreset = effectivePreset;
+    await prefs.setString(_autoBenchmarkPresetKey, effectivePreset);
+    final current = loadVideoFilters() ?? VideoFilters.maximumQualityDefaults();
+    await saveVideoFilters(current.copyWith(gpuEncodingPreset: effectivePreset));
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> runUniversalBenchmark() async {
+    if (_isBenchmarkRunning) {
+      return {
+        'success': false,
+        'error': 'Benchmark already running',
+      };
+    }
+    _isBenchmarkRunning = true;
+    _benchmarkProgress = 0.0;
+    _benchmarkPhase = 'phase.starting';
+    notifyListeners();
+    try {
+      final result = await BenchmarkService.runUniversalBenchmark(
+        useGpu: _useGpu,
+        gpuType: _gpuType,
+        preferredCodec: _defaultVideoCodec,
+        onProgress: (progress, phase) {
+          _benchmarkProgress = progress.clamp(0.0, 1.0);
+          _benchmarkPhase = phase;
+          notifyListeners();
+        },
+      );
+      if (result['success'] == true) {
+        final bestPreset = (result['bestPreset'] as String?) ?? 'medium';
+        await setAutoBenchmarkPreset(bestPreset);
+        final signature = result['signature'] is Map
+            ? Map<String, String>.from(result['signature'] as Map)
+            : <String, String>{};
+        _lastBenchmarkSignature = BenchmarkService.flattenSignature(signature);
+        await prefs.setString(_benchmarkSignatureKey, _lastBenchmarkSignature);
+        final historyEntry = <String, dynamic>{
+          'timestamp': result['timestamp'] ?? DateTime.now().toIso8601String(),
+          'bestPreset': bestPreset,
+          'codec': result['codec'] ?? _defaultVideoCodec,
+          'scoresFps': result['scoresFps'] ?? <String, double>{},
+          'signature': signature,
+        };
+        _benchmarkHistory = <Map<String, dynamic>>[historyEntry, ..._benchmarkHistory];
+        if (_benchmarkHistory.length > 20) {
+          _benchmarkHistory = _benchmarkHistory.sublist(0, 20);
+        }
+        await prefs.setString(_benchmarkHistoryKey, json.encode(_benchmarkHistory));
+        appLog('🏁 Benchmark complete: best preset = $bestPreset, codec=${result['codec']}');
+      } else {
+        appLog('⚠️ Benchmark failed: ${result['error']}');
+      }
+      return result;
+    } finally {
+      _isBenchmarkRunning = false;
+      _benchmarkProgress = 1.0;
+      _benchmarkPhase = '';
+      notifyListeners();
+    }
+  }
+
+  Future<void> _maybeAutoRerunBenchmark() async {
+    if (_isBenchmarkRunning) return;
+    if (_benchmarkHistory.isEmpty) return;
+    try {
+      final currentSigMap = await BenchmarkService.getSystemSignature(
+        useGpu: _useGpu,
+        gpuType: _gpuType,
+        preferredCodec: _defaultVideoCodec,
+      );
+      final currentSignature = BenchmarkService.flattenSignature(currentSigMap);
+      if (_lastBenchmarkSignature.isEmpty) {
+        _lastBenchmarkSignature = currentSignature;
+        await prefs.setString(_benchmarkSignatureKey, currentSignature);
+        return;
+      }
+      if (currentSignature != _lastBenchmarkSignature) {
+        appLog('🔁 Benchmark auto-rerun: ffmpeg/GPU signature changed');
+        await runUniversalBenchmark();
+      }
+    } catch (e) {
+      appLog('⚠️ Auto benchmark check failed: $e');
+    }
+  }
+
   Future<void> setLanguage(String language) async {
     _language = language;
     await prefs.setString(_languageKey, language);
@@ -247,7 +389,7 @@ class SettingsProvider with ChangeNotifier {
     if (_videoBitrateMode == 'crf') {
       return 'CRF: $_videoQuality';
     } else {
-      return '${_videoBitrate} kbps';
+      return '$_videoBitrate kbps';
     }
   }
 

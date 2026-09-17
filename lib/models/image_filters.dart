@@ -1,16 +1,22 @@
 class ImageFilters {
-  double denoiseStrength; // 0-1.0
-  double sharpness; // 0-2.0
-  double brightness; // -1.0 to 1.0
-  double contrast; // -2.0 to 2.0
-  double saturation; // 0-3.0
-  double gamma; // 0.1-10.0
-  String colorProfile; // none, vivid, cinematic, bw, sepia
-  bool enableUpscaling; // Abilita upscaling
-  double upscaleFactor; // Fattore di upscaling (1.0 = originale, 2.0 = 2x, etc.)
-  bool useCustomResolution; // Usa risoluzione personalizzata invece del fattore
-  int customWidth; // Larghezza personalizzata (0 = mantiene aspect ratio)
-  int customHeight; // Altezza personalizzata (0 = mantiene aspect ratio)
+  double denoiseStrength;
+  double sharpness;
+  double brightness;
+  double contrast;
+  double saturation;
+  double gamma;
+  String colorProfile;
+  bool enableUpscaling;
+  double upscaleFactor;
+  bool useCustomResolution;
+  int customWidth;
+  int customHeight;
+
+  bool enableDRUNet;
+  String drunetMode;
+  int drunetNoiseLevel;
+  double drunetUpscaleFactor;
+  double drunetDeblurStrength;
 
   ImageFilters({
     this.denoiseStrength = 0.0,
@@ -25,6 +31,11 @@ class ImageFilters {
     this.useCustomResolution = false,
     this.customWidth = 0,
     this.customHeight = 0,
+    this.enableDRUNet = false,
+    this.drunetMode = 'denoise',
+    this.drunetNoiseLevel = 7,
+    this.drunetUpscaleFactor = 2.0,
+    this.drunetDeblurStrength = 0.5,
   });
 
   ImageFilters copyWith({
@@ -40,6 +51,11 @@ class ImageFilters {
     bool? useCustomResolution,
     int? customWidth,
     int? customHeight,
+    bool? enableDRUNet,
+    String? drunetMode,
+    int? drunetNoiseLevel,
+    double? drunetUpscaleFactor,
+    double? drunetDeblurStrength,
   }) {
     return ImageFilters(
       denoiseStrength: denoiseStrength ?? this.denoiseStrength,
@@ -54,6 +70,11 @@ class ImageFilters {
       useCustomResolution: useCustomResolution ?? this.useCustomResolution,
       customWidth: customWidth ?? this.customWidth,
       customHeight: customHeight ?? this.customHeight,
+      enableDRUNet: enableDRUNet ?? this.enableDRUNet,
+      drunetMode: drunetMode ?? this.drunetMode,
+      drunetNoiseLevel: drunetNoiseLevel ?? this.drunetNoiseLevel,
+      drunetUpscaleFactor: drunetUpscaleFactor ?? this.drunetUpscaleFactor,
+      drunetDeblurStrength: drunetDeblurStrength ?? this.drunetDeblurStrength,
     );
   }
 
@@ -71,6 +92,11 @@ class ImageFilters {
       'useCustomResolution': useCustomResolution,
       'customWidth': customWidth,
       'customHeight': customHeight,
+      'enableDRUNet': enableDRUNet,
+      'drunetMode': drunetMode,
+      'drunetNoiseLevel': drunetNoiseLevel,
+      'drunetUpscaleFactor': drunetUpscaleFactor,
+      'drunetDeblurStrength': drunetDeblurStrength,
     };
   }
 
@@ -88,7 +114,22 @@ class ImageFilters {
       useCustomResolution: map['useCustomResolution'] ?? false,
       customWidth: map['customWidth'] ?? 0,
       customHeight: map['customHeight'] ?? 0,
+      enableDRUNet: map['enableDRUNet'] ?? false,
+      drunetMode: map['drunetMode'] as String? ?? 'denoise',
+      drunetNoiseLevel: map['drunetNoiseLevel'] is int
+          ? map['drunetNoiseLevel'] as int
+          : (map['drunetNoiseLevel'] as num?)?.toInt() ?? 7,
+      drunetUpscaleFactor: _mapDouble(map['drunetUpscaleFactor'], 2.0),
+      drunetDeblurStrength: _mapDouble(map['drunetDeblurStrength'], 0.5),
     );
+  }
+
+  static double _mapDouble(dynamic v, double fallback) {
+    if (v == null) return fallback;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    if (v is num) return v.toDouble();
+    return fallback;
   }
 
   void reset() {
@@ -104,6 +145,11 @@ class ImageFilters {
     useCustomResolution = false;
     customWidth = 0;
     customHeight = 0;
+    enableDRUNet = false;
+    drunetMode = 'denoise';
+    drunetNoiseLevel = 7;
+    drunetUpscaleFactor = 2.0;
+    drunetDeblurStrength = 0.5;
   }
 
   bool get hasActiveFilters {
@@ -115,6 +161,7 @@ class ImageFilters {
         gamma != 1.0 ||
         colorProfile != 'none' ||
         enableUpscaling ||
-        (useCustomResolution && (customWidth > 0 || customHeight > 0));
+        (useCustomResolution && (customWidth > 0 || customHeight > 0)) ||
+        enableDRUNet;
   }
 }

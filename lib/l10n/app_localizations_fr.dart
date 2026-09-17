@@ -24,6 +24,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get about => 'À propos';
 
   @override
+  String get donateNow => 'Faire un don';
+
+  @override
   String get close => 'Fermer';
 
   @override
@@ -871,6 +874,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filmRestorationDesc => 'Optimisé pour vidéos anciennes et films';
 
   @override
+  String get smoothCleanLook => 'Lisse / net';
+
+  @override
+  String get smoothCleanLookDesc => 'Moins de grain et de bruit ; rendu plus doux (plus rapide que l’IA)';
+
+  @override
   String get fundamentalFilters => 'Filtres fondamentaux';
 
   @override
@@ -943,7 +952,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get drunetDenoisingTitle => 'DRUNet (AI denoising)';
 
   @override
-  String get drunetDenoisingDesc => 'Deep learning denoising when drunet_model.pth is in models/drunet/. On by default.';
+  String get drunetDenoisingDesc => 'Réduction de bruit IA (pas d’upscaling). Passe préalable avec Python (NumPy, OpenCV) et scripts/python/drunet_denoiser.py ; drunet_model.pth optionnel pour des poids neuronaux futurs. N’augmente pas la résolution—utilisez la super-résolution.';
 
   @override
   String get sceneDetectionTitle => 'Scene detection (PySceneDetect)';
@@ -1087,4 +1096,191 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pythonSetupRetry => 'Réessayer';
+
+  @override
+  String get benchmarkRunStart => 'Running benchmark...';
+
+  @override
+  String get benchmarkRunButton => 'Run auto benchmark';
+
+  @override
+  String get benchmarkRunningButton => 'Benchmark running...';
+
+  @override
+  String get benchmarkDone => 'Benchmark done';
+
+  @override
+  String get benchmarkFailed => 'Benchmark failed';
+
+  @override
+  String get benchmarkHistoryTitle => 'Benchmark history';
+
+  @override
+  String get benchmarkHistoryEmpty => 'No benchmark history yet';
+
+  @override
+  String get benchmarkPhaseStarting => 'Starting benchmark';
+
+  @override
+  String get benchmarkPhaseCollecting => 'Collecting ffmpeg and GPU info';
+
+  @override
+  String get benchmarkPhaseFast => 'Benchmarking fast preset';
+
+  @override
+  String get benchmarkPhaseMedium => 'Benchmarking medium preset';
+
+  @override
+  String get benchmarkPhaseHighQuality => 'Benchmarking high quality preset';
+
+  @override
+  String get benchmarkPhaseSelecting => 'Selecting best preset';
+
+  @override
+  String get benchmarkPhaseDone => 'Done';
+
+  @override
+  String get outputFileNotFound => 'Output file not found';
+
+  @override
+  String get remainingLabel => 'Remaining';
+
+  @override
+  String get fileExistsStatus => 'File already exists';
+
+  @override
+  String get stoppedStatus => 'Stopped';
+
+  @override
+  String get upscalingWithFfmpeg => 'Upscaling with FFmpeg...';
+
+  @override
+  String get downloadConnecting => 'Connecting';
+
+  @override
+  String get drunetDownloadingLabel => 'Downloading DRUNet';
+
+  @override
+  String get retryingWithMirror => 'Retrying with alternate mirror';
+
+  @override
+  String get downloadViaPythonScript => 'Downloading via Python script';
+
+  @override
+  String get previewFileNotCreated => 'Preview file not created';
+
+  @override
+  String get previewGenerationError => 'Preview generation error';
+
+  @override
+  String get preparing => 'Preparation...';
+
+  @override
+  String get analyzingVideo => 'Analyse vidéo en cours...';
+
+  @override
+  String get checkingAcceleration => 'Vérification accélération GPU/filtres...';
+
+  @override
+  String get drunetChecking => 'DRUNet : vérification dépendances et modèle...';
+
+  @override
+  String get drunetExtractFrames => 'DRUNet : extraction des images...';
+
+  @override
+  String get drunetDenoisingFrames => 'DRUNet : débruitage IA en cours (peut prendre du temps)...';
+
+  @override
+  String get drunetRebuildVideo => 'DRUNet : reconstruction vidéo...';
+
+  @override
+  String get drunetPrepassDone => 'Pré-passe DRUNet terminée, démarrage encodage...';
+
+  @override
+  String get encodingStarting => 'Démarrage encodage...';
+
+  @override
+  String get estimatedTimeLabel => 'Temps estimé';
+
+  @override
+  String get drunetInstallingDeps => 'DRUNet : installation des dépendances Python...';
+
+  @override
+  String get drunetDepsInstalled => 'DRUNet : dépendances installées, reprise...';
+
+  @override
+  String get drunetEnvPanelTitle => 'Installer / réparer DRUNet';
+
+  @override
+  String get drunetEnvPanelDesc => 'Crée scripts/python/venv et installe NumPy et OpenCV. À utiliser si le débruitage IA échoue à cause de paquets Python manquants.';
+
+  @override
+  String get drunetInstallRepairButton => 'Installer / réparer l’environnement';
+
+  @override
+  String get drunetRefreshEnvStatus => 'Vérifier l’état';
+
+  @override
+  String get drunetEnvCheckingStatus => 'Vérification…';
+
+  @override
+  String get drunetEnvStatusReady => 'Environnement prêt';
+
+  @override
+  String get drunetEnvStatusNotReady => 'Environnement non prêt';
+
+  @override
+  String get drunetEnvStatusUnknown => 'État non vérifié';
+
+  @override
+  String get drunetEnvInstallSuccess => 'L’environnement Python DRUNet est prêt.';
+
+  @override
+  String drunetEnvInstallFailed(String error) {
+    return 'Échec de la configuration DRUNet : $error';
+  }
+
+  @override
+  String get drunetModeLabel => 'Mode DRUNet';
+
+  @override
+  String get drunetModeDenoise => 'Débruitage';
+
+  @override
+  String get drunetModeDeblur => 'Défloutage';
+
+  @override
+  String get drunetModeUpscale => 'Agrandissement';
+
+  @override
+  String get drunetModeJpegRestore => 'Restauration JPEG';
+
+  @override
+  String get drunetUpscaleFactor => 'Facteur d\'agrandissement';
+
+  @override
+  String get drunetDeblurStrength => 'Intensité du défloutage';
+
+  @override
+  String get drunetNoiseLevel => 'Niveau de bruit';
+
+  @override
+  String get drunetDeviceLabel => 'Périphérique';
+
+  @override
+  String get drunetDeviceAuto => 'Auto';
+
+  @override
+  String get drunetDeviceCPU => 'CPU';
+
+  @override
+  String get drunetDeviceCUDA => 'CUDA (NVIDIA)';
+
+  @override
+  String get enableDRUNet => 'Activer DRUNet (images)';
+
+  @override
+  String conversionProcessingRate(String fps) {
+    return '~$fps i/s traitées';
+  }
 }

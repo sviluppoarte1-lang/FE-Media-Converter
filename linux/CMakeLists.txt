@@ -2,27 +2,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
-# Fix for Flutter snap linker incompatibility with .relr.dyn sections
-# Force use of system linker instead of Flutter snap's linker
-# Try different linkers in order of preference
-if(EXISTS "/usr/bin/ld.gold")
-  set(LINKER_TYPE "gold")
-elseif(EXISTS "/usr/bin/ld.lld")
-  set(LINKER_TYPE "lld")
-elseif(EXISTS "/usr/bin/ld.bfd")
-  set(LINKER_TYPE "bfd")
-elseif(EXISTS "/usr/bin/ld")
-  # Use system ld directly
-  set(CMAKE_LINKER "/usr/bin/ld")
-  set(CMAKE_CXX_LINKER "/usr/bin/ld")
-  set(CMAKE_C_LINKER "/usr/bin/ld")
-endif()
-
-if(LINKER_TYPE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=${LINKER_TYPE}")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=${LINKER_TYPE}")
-endif()
-
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "video_converter_pro")
@@ -65,10 +44,6 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
-  # Use system linker to avoid Flutter snap linker issues with .relr.dyn
-  if(LINKER_TYPE)
-    target_link_options(${TARGET} PRIVATE -fuse-ld=${LINKER_TYPE})
-  endif()
 endfunction()
 
 # Flutter library and tool build rules.
