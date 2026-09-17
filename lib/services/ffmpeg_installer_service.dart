@@ -6,6 +6,8 @@ import 'package:video_converter_pro/utils/snap_environment.dart';
 import 'package:video_converter_pro/utils/ffmpeg_paths.dart';
 
 class FFmpegInstallerService {
+  static bool get isRunningInSnap => SnapEnvironment.isRunningInSnap;
+
   static const String _versionRequired = '8.0.1'; // Versione consigliata
   static const String _versionMinimum = '5.0.0'; // Versione minima accettata
   static const String _prefKeySudoPassword = 'ffmpeg_sudo_password';

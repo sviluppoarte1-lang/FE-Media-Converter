@@ -17,19 +17,6 @@ String _upscaleMsg(String key) {
   }
 }
 
-String _upscaleMsg(String key) {
-  final lang = Platform.localeName.toLowerCase().split('_').first;
-  final l10n = lookupAppLocalizations(Locale(lang));
-  switch (key) {
-    case 'start':
-      return l10n.upscalingWithFfmpeg;
-    case 'done':
-      return l10n.completed;
-    default:
-      return key;
-  }
-}
-
 class ImageUpscalerService {
   bool _initialized = false;
 
