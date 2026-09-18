@@ -54,14 +54,13 @@ __pycache__/
 *.deb
 *.rpm
 
-# Ignora i modelli AI pesanti (file .pth)
+# Ignora i modelli AI pesanti (file .pth) - bundled during build
 *.pth
-# Tranne il modello DRUNet bundled nell'app
-!linux/bundled/models/drunet/drunet_model.pth
-!assets/models/drunet/drunet_model.pth
-# ONNX model files
-!linux/bundled/models/drunet/drunet_model.onnx
-!linux/bundled/models/drunet/drunet_model.onnx.data
+# Ignora i binari bundled pesanti - scaricati da GitHub Releases durante build snap
+linux/bundled/ffmpeg
+linux/bundled/ffprobe
+linux/bundled/models/
+assets/models/
 
 # Snap build artifacts
 snap-build/

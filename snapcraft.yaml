@@ -50,11 +50,24 @@ apps:
       - browser-support
 
 parts:
+  bundled-assets:
+    plugin: nil
+    source: .
+    override-build: |
+      BUNDLED_URL="https://github.com/sviluppoarte1-lang/FE-Media-Converter/releases/download/bundled-assets-v2.0.5/bundled-assets-v2.0.5.tar.gz"
+      curl -L -o /tmp/bundled.tar.gz "$BUNDLED_URL"
+      mkdir -p "$CRAFT_PART_SRC/linux/bundled/models"
+      tar xzf /tmp/bundled.tar.gz -C "$CRAFT_PART_SRC/linux/bundled"
+      rm -f /tmp/bundled.tar.gz
+      ls -lh "$CRAFT_PART_SRC/linux/bundled/"
+
   fe-media-converter:
     source: .
     plugin: flutter
     flutter-channel: stable
     source-type: local
+    after:
+      - bundled-assets
     build-packages:
       - cmake
       - ninja-build
@@ -65,6 +78,7 @@ parts:
       - libnotify4
       - liblzma5
       - zenity
+
   desktop-file:
     plugin: dump
     source: snap/gui
