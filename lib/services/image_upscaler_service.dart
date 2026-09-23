@@ -59,7 +59,7 @@ class ImageUpscalerService {
         throw Exception('FFmpeg upscaling fallito: ${process.stderr}');
       }
     } catch (e) {
-      appLog('❌ Errore upscaling FFmpeg: $e');
+      appLog('Errore upscaling FFmpeg: $e');
       return null;
     }
   }

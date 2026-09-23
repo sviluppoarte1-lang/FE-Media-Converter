@@ -218,6 +218,62 @@ def _jpeg_restore_bgr(img_bgr: np.ndarray, strength: int) -> np.ndarray:
 _neural_cache: Dict[str, Optional[Tuple[Any, Any]]] = {}
 
 
+def _onnx_available() -> bool:
+    try:
+        import onnxruntime  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def _resolve_onnx_model_path(pth_path: str) -> Optional[str]:
+    """Given a .pth path, find the corresponding .onnx model."""
+    p = Path(pth_path)
+    onnx_path = p.with_suffix('.onnx')
+    if onnx_path.is_file():
+        return str(onnx_path)
+    return None
+
+
+def _load_onnx_session(model_path: str, device_pref: str) -> Optional[Tuple[Any, str]]:
+    import onnxruntime as ort
+    providers = ['CPUExecutionProvider']
+    if device_pref in ('auto', 'cuda'):
+        if 'CUDAExecutionProvider' in ort.get_available_providers():
+            providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+    try:
+        session = ort.InferenceSession(model_path, providers=providers)
+        actual = session.get_providers()[0]
+        return session, actual
+    except Exception as e:
+        print('DRUNet ONNX: load failed (%s)' % e, file=sys.stderr, flush=True)
+        return None
+
+
+def _denoise_neural_onnx(session: Any, img_bgr: np.ndarray, noise_level: int) -> np.ndarray:
+    import cv2
+    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    h, w = img_rgb.shape[:2]
+    # Pad to multiple of 8
+    pad_h = (8 - h % 8) % 8
+    pad_w = (8 - w % 8) % 8
+    if pad_h > 0 or pad_w > 0:
+        img_rgb = np.pad(img_rgb, ((0, pad_h), (0, pad_w), (0, 0)), mode='reflect')
+
+    t = img_rgb.astype(np.float32) / 255.0
+    t = t.transpose(2, 0, 1)[np.newaxis, ...]  # (1, 3, H, W)
+    sigma = max(0.0, min(1.0, float(noise_level) / 255.0))
+    nm = np.full((1, 1, t.shape[2], t.shape[3]), sigma, dtype=np.float32)
+    x = np.concatenate([t, nm], axis=1)  # (1, 4, H, W)
+
+    out = session.run(None, {'input': x})[0]  # (1, 3, H, W)
+    out = out[0].transpose(1, 2, 0)  # (H, W, 3)
+    out = np.clip(out * 255.0, 0, 255).astype(np.uint8)
+    if pad_h > 0 or pad_w > 0:
+        out = out[:h, :w]
+    return cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
+
+
 def _get_neural_net(model_path: str, device_pref: str) -> Optional[Tuple[Any, Any]]:
     key = '%s|%s' % (model_path, device_pref)
     if key in _neural_cache:
@@ -225,8 +281,20 @@ def _get_neural_net(model_path: str, device_pref: str) -> Optional[Tuple[Any, An
     path = Path(model_path)
     if not path.is_file():
         return None
+
+    # Try ONNX first (much lighter dependency)
+    onnx_path = _resolve_onnx_model_path(model_path)
+    if onnx_path and _onnx_available():
+        result = _load_onnx_session(onnx_path, device_pref)
+        if result is not None:
+            session, provider = result
+            _neural_cache[key] = (session, 'onnx')
+            print('DRUNet: loaded ONNX model from %s (provider=%s)' % (onnx_path, provider), file=sys.stderr, flush=True)
+            return _neural_cache[key]
+
+    # Fallback to PyTorch
     if not _torch_available():
-        print('DRUNet: PyTorch not installed; pip install torch (see requirements-drunet.txt)', file=sys.stderr, flush=True)
+        print('DRUNet: neither ONNX Runtime nor PyTorch available', file=sys.stderr, flush=True)
         _neural_cache[key] = None
         return None
     dev = _resolve_torch_device(device_pref)
@@ -268,24 +336,30 @@ def process_file(
 
     if mode == 'jpeg_restore':
         result = _jpeg_restore_bgr(img, noise_level)
-        neural = None
-        if model_path:
-            neural = _get_neural_net(model_path, device)
-        if neural is not None:
-            net, dev = neural
-            try:
-                result = _denoise_neural_bgr(net, dev, result, noise_level)
-            except Exception as e:
-                print('DRUNet: inference error (%s)' % e, file=sys.stderr, flush=True)
+    neural = None
+    if model_path:
+        neural = _get_neural_net(model_path, device)
+    if neural is not None:
+        net, backend = neural
+        try:
+            if backend == 'onnx':
+                result = _denoise_neural_onnx(net, result, noise_level)
+            else:
+                result = _denoise_neural_bgr(net, backend, result, noise_level)
+        except Exception as e:
+            print('DRUNet: inference error (%s)' % e, file=sys.stderr, flush=True)
         return cv2.imwrite(str(out_path), result)
 
     neural = None
     if model_path:
         neural = _get_neural_net(model_path, device)
     if neural is not None:
-        net, dev = neural
+        net, backend = neural
         try:
-            result = _denoise_neural_bgr(net, dev, img, noise_level)
+            if backend == 'onnx':
+                result = _denoise_neural_onnx(net, img, noise_level)
+            else:
+                result = _denoise_neural_bgr(net, backend, img, noise_level)
         except Exception as e:
             print('DRUNet: inference error (%s); OpenCV fallback' % e, file=sys.stderr, flush=True)
             result = _denoise_opencv_bgr(img, noise_level)

@@ -32,7 +32,7 @@ Future<void> applyNvidiaFixes() async {
       if (nvidiaSmiResult.exitCode == 0 && nvidiaSmiResult.stdout.toString().trim().isNotEmpty) {
         nvidiaDetected = true;
         nvidiaDriverVersion = nvidiaSmiResult.stdout.toString().trim();
-        appLog('🔍 [NVIDIA] Rilevato driver NVIDIA versione: $nvidiaDriverVersion');
+        appLog('[NVIDIA] Rilevato driver NVIDIA versione: $nvidiaDriverVersion');
       }
     } catch (_) {}
 
@@ -45,7 +45,7 @@ Future<void> applyNvidiaFixes() async {
           if (versionMatch != null) {
             nvidiaDetected = true;
             nvidiaDriverVersion = versionMatch.group(1);
-            appLog('🔍 [NVIDIA] Rilevato driver NVIDIA versione: $nvidiaDriverVersion');
+            appLog('[NVIDIA] Rilevato driver NVIDIA versione: $nvidiaDriverVersion');
           }
         }
       } catch (_) {}
@@ -58,25 +58,25 @@ Future<void> applyNvidiaFixes() async {
           final output = lspciResult.stdout.toString().toLowerCase();
           if (output.contains('nvidia') && (output.contains('vga') || output.contains('display'))) {
             nvidiaDetected = true;
-            appLog('🔍 [NVIDIA] Rilevata GPU NVIDIA tramite lspci');
+            appLog('[NVIDIA] Rilevata GPU NVIDIA tramite lspci');
           }
         }
       } catch (_) {}
     }
 
     if (nvidiaDetected) {
-      appLog('⚠️ [NVIDIA] Driver NVIDIA rilevato. Applicazione fix per compatibilità Flutter...');
+      appLog('[NVIDIA] Driver NVIDIA rilevato. Applicazione fix per compatibilità Flutter...');
       
       bool isProblematicDriver = false;
       if (nvidiaDriverVersion != null) {
         final majorVersion = int.tryParse(nvidiaDriverVersion.split('.').first);
         if (majorVersion != null && (majorVersion == 580 || majorVersion == 590)) {
           isProblematicDriver = true;
-          appLog('⚠️ [NVIDIA] Rilevato driver problematico (${majorVersion}xx). Applicazione fix specifici...');
+          appLog('[NVIDIA] Rilevato driver problematico (${majorVersion}xx). Applicazione fix specifici...');
         }
       }
       
-      appLog('✅ [NVIDIA] Fix applicati tramite variabili d\'ambiente:');
+      appLog('[NVIDIA] Fix applicati tramite variabili d\'ambiente:');
       appLog('   - __GL_SYNC_TO_VBLANK=0 (disabilita VSync per evitare freeze)');
       appLog('   - __GL_THREADED_OPTIMIZATIONS=0 (disabilita ottimizzazioni threaded)');
       appLog('   - __GL_ALLOW_UNOFFICIAL_PROTOCOL=0 (forza protocolli ufficiali)');
@@ -86,7 +86,7 @@ Future<void> applyNvidiaFixes() async {
       appLog('   - GDK_BACKEND=x11 (forza X11 invece di Wayland)');
     }
   } catch (e) {
-    appLog('⚠️ [NVIDIA] Errore durante rilevamento NVIDIA: $e');
+    appLog('[NVIDIA] Errore durante rilevamento NVIDIA: $e');
   }
 }
 
@@ -99,25 +99,25 @@ void main() async {
       final gdkBackend = Platform.environment['GDK_BACKEND'];
       
       if (waylandDisplay != null && gdkBackend != 'x11') {
-        appLog('⚠️ [Wayland] Rilevato Wayland. Per migliori prestazioni, considera di usare X11.');
-        appLog('⚠️ [Wayland] L\'app tenterà di usare X11 automaticamente se disponibile.');
+        appLog('[Wayland] Rilevato Wayland. Per migliori prestazioni, considera di usare X11.');
+        appLog('[Wayland] L\'app tenterà di usare X11 automaticamente se disponibile.');
       }
       
       await applyNvidiaFixes();
     } catch (e) {
-      appLog('⚠️ [Wayland] Errore durante check Wayland: $e');
+      appLog('[Wayland] Errore durante check Wayland: $e');
     }
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    appLog('❌ [FlutterError] ${details.exception}');
-    appLog('📚 [FlutterError] Stack: ${details.stack}');
+    appLog('[FlutterError] ${details.exception}');
+    appLog('[FlutterError] Stack: ${details.stack}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    appLog('❌ [PlatformError] $error');
-    appLog('📚 [PlatformError] Stack: $stack');
+    appLog('[PlatformError] $error');
+    appLog('[PlatformError] Stack: $stack');
     return true; // Previene il crash
   };
 
@@ -212,8 +212,8 @@ void main() async {
       );
     },
     (error, stack) {
-      appLog('❌ [ZoneError] $error');
-      appLog('📚 [ZoneError] Stack: $stack');
+      appLog('[ZoneError] $error');
+      appLog('[ZoneError] Stack: $stack');
     },
   );
 }

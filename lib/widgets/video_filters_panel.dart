@@ -184,7 +184,7 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // HEADER CON ANALISI
+            // Header with analysis
             ListTile(
               leading: const Icon(Icons.photo_filter, color: Colors.blue),
               title: Text(
@@ -345,7 +345,7 @@ class _VideoFiltersPanelState extends State<VideoFiltersPanel> {
           const SizedBox(height: 12),
         ] else ...[
           const Text(
-            '✅ Nessun problema critico rilevato',
+            'Nessun problema critico rilevato',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(height: 8),

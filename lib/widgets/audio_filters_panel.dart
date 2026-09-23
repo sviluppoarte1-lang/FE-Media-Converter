@@ -190,7 +190,7 @@ class _AudioFiltersPanelState extends State<AudioFiltersPanel> {
                   ),
                 ),
 
-              // VOLUME E COMPRESSIONE
+              // Volume and dynamics
               _buildFilterSection(
                 title: l10n.volumeDynamics,
                 icon: Icons.volume_up,
@@ -224,7 +224,7 @@ class _AudioFiltersPanelState extends State<AudioFiltersPanel> {
 
               const SizedBox(height: 16),
 
-              // EQUALIZZATORE GRAFICO
+              // Graphic equalizer
               _buildFilterSection(
                 title: l10n.equalizer,
                 icon: Icons.graphic_eq,
@@ -289,7 +289,7 @@ class _AudioFiltersPanelState extends State<AudioFiltersPanel> {
 
               const SizedBox(height: 16),
 
-              // PULIZIA AUDIO
+              // Audio cleanup
               _buildFilterSection(
                 title: l10n.audioCleaning,
                 icon: Icons.clean_hands,
@@ -325,7 +325,7 @@ class _AudioFiltersPanelState extends State<AudioFiltersPanel> {
 
               const SizedBox(height: 16),
 
-              // ANTEPRIMA EFFETTI AUDIO
+              // Audio effect preview
               _buildAudioEffectPreview(l10n),
             ],
           ],

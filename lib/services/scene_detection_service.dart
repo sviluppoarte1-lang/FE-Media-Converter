@@ -74,7 +74,7 @@ class SceneDetectionService {
       
       return importCheck.exitCode == 0;
     } catch (e) {
-      appLog('⚠️ [SceneDetection] Dependency check failed: $e');
+      appLog('[SceneDetection] Dependency check failed: $e');
       return false;
     }
   }
@@ -122,7 +122,7 @@ class SceneDetectionService {
         args.add('--analyze-quality');
       }
       
-      appLog('🔍 [SceneDetection] Detecting scenes in: $videoPath');
+      appLog('[SceneDetection] Detecting scenes in: $videoPath');
       appLog('   → Python: $pythonExe');
       appLog('   → Method: $method');
       appLog('   → Threshold: $threshold');
@@ -132,7 +132,7 @@ class SceneDetectionService {
       if (process.exitCode != 0) {
         final stderr = process.stderr.toString().trim();
         final stdout = process.stdout.toString().trim();
-        appLog('❌ [SceneDetection] Exit code: ${process.exitCode}');
+        appLog('[SceneDetection] Exit code: ${process.exitCode}');
         if (stderr.isNotEmpty) appLog('   stderr: $stderr');
         if (stdout.isNotEmpty) appLog('   stdout: $stdout');
         // Script may send JSON error on stdout (e.g. ImportError)
@@ -165,7 +165,7 @@ class SceneDetectionService {
         final result = json.decode(output) as Map<String, dynamic>;
         if (result['success'] == true) {
           final totalScenes = result['total_scenes'] as int? ?? 0;
-          appLog('✅ [SceneDetection] Detected $totalScenes scenes');
+          appLog('[SceneDetection] Detected $totalScenes scenes');
           
           // Log scene summary
           final scenes = result['scenes'] as List<dynamic>?;
@@ -182,7 +182,7 @@ class SceneDetectionService {
         };
       }
     } catch (e) {
-      appLog('❌ [SceneDetection] Exception: $e');
+      appLog('[SceneDetection] Exception: $e');
       return {
         'success': false,
         'error': 'Exception during scene detection: $e'
@@ -219,7 +219,7 @@ class SceneDetectionService {
         '--output-dir', outputDir,
       ];
       
-      appLog('✂️ [SceneDetection] Splitting video into scenes...');
+      appLog('[SceneDetection] Splitting video into scenes...');
       appLog('   → Python: $pythonExe');
       
       final process = await Process.run(pythonExe, args);
@@ -246,7 +246,7 @@ class SceneDetectionService {
           final splitResult = result['split_result'] as Map<String, dynamic>?;
           if (splitResult != null && splitResult['success'] == true) {
             final totalFiles = splitResult['total_files'] as int? ?? 0;
-            appLog('✅ [SceneDetection] Video split into $totalFiles scene files');
+            appLog('[SceneDetection] Video split into $totalFiles scene files');
           }
         }
         return result;

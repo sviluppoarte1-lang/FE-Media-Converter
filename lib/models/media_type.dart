@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum MediaType {
   video,
   audio,
@@ -16,14 +18,14 @@ extension MediaTypeExtension on MediaType {
     }
   }
 
-  String get icon {
+  IconData get icon {
     switch (this) {
       case MediaType.video:
-        return '🎬';
+        return Icons.videocam;
       case MediaType.audio:
-        return '🎵';
+        return Icons.audiotrack;
       case MediaType.image:
-        return '🖼️';
+        return Icons.image;
     }
   }
 

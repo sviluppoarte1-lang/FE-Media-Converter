@@ -311,7 +311,6 @@ class ConversionProvider with ChangeNotifier {
 
       final settings = _getSettings();
 
-      // CHIAMATA CORRETTA CON TUTTI I PARAMETRI
       // Se il task ha un flag di sovrascrittura, usa il metodo con sovrascrittura
       final conversionFuture = _ffmpegService.convertMediaWithOverwrite(
         taskId: task.id,
@@ -323,7 +322,6 @@ class ConversionProvider with ChangeNotifier {
         // per rispettare il bitrate scelto dall'utente.
         audioQuality: task.audioBitrate,
         audioCodec: task.audioCodec,
-        // PARAMETRI AGGIUNTI
         videoCodec: task.videoCodec,
         videoBitrate: task.videoBitrate,
         videoBitrateMode: task.videoBitrateMode,
@@ -347,7 +345,7 @@ class ConversionProvider with ChangeNotifier {
             }
           } catch (e) {
             // Ignora errori durante aggiornamento progresso
-            appLog('⚠️ [ConversionProvider] Errore aggiornamento progresso: $e');
+            appLog('[ConversionProvider] Errore aggiornamento progresso: $e');
           }
         },
       );
@@ -359,8 +357,8 @@ class ConversionProvider with ChangeNotifier {
         result = await conversionFuture;
       } catch (e, stackTrace) {
         // Gestione errori robusta per prevenire crash
-        appLog('❌ [ConversionProvider] Errore durante conversione: $e');
-        appLog('📚 [ConversionProvider] Stack trace: $stackTrace');
+        appLog('[ConversionProvider] Errore durante conversione: $e');
+        appLog('[ConversionProvider] Stack trace: $stackTrace');
         result = {
           'success': false,
           'error': 'Errore durante la conversione: $e'

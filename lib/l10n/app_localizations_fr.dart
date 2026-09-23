@@ -9,7 +9,7 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get appTitle => 'FE Media Converter 🎬🎵🖼️';
+  String get appTitle => 'FE Media Converter';
 
   @override
   String get conversion => 'Conversion';
@@ -22,9 +22,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get about => 'À propos';
-
-  @override
-  String get donateNow => 'Faire un don';
 
   @override
   String get close => 'Fermer';
@@ -1241,6 +1238,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String conversionProcessingRate(String fps) {
+    return '~$fps i/s traitées';
+  }
+
+  @override
+  String get donateNow => 'Faire un don';
+
+  @override
   String get drunetModeLabel => 'Mode DRUNet';
 
   @override
@@ -1278,9 +1283,4 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get enableDRUNet => 'Activer DRUNet (images)';
-
-  @override
-  String conversionProcessingRate(String fps) {
-    return '~$fps i/s traitées';
-  }
 }

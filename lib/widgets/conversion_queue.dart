@@ -216,9 +216,10 @@ class ConversionQueue extends StatelessWidget {
         const SizedBox(height: 2),
         Row(
           children: [
-            Text(
+            Icon(
               task.mediaTypeIcon,
-              style: const TextStyle(fontSize: 12),
+              size: 14,
+              color: Colors.grey.shade600,
             ),
             const SizedBox(width: 4),
             Text(

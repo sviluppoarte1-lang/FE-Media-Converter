@@ -401,7 +401,7 @@ class QualitySettings extends StatelessWidget {
     );
   }
 
-  // METODI LOCALI PER CODEC VIDEO
+  // Local video codec names
   String _getVideoCodecName(String codec) {
     switch (codec) {
       case 'libx264':

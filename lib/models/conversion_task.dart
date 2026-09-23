@@ -3,6 +3,7 @@ import 'video_filters.dart';
 import 'audio_filters.dart';
 import 'image_filters.dart';
 import 'conversion_status.dart';
+import 'package:flutter/material.dart';
 
 class ConversionTask {
   static int _nextId = 0;
@@ -15,7 +16,7 @@ class ConversionTask {
   final int audioQuality;
   final int audioBitrate;
   final String audioCodec;
-  // AGGIUNGI QUESTI CAMPI
+  // Video codec settings
   final String videoCodec;
   final int videoBitrate;
   final String videoBitrateMode;
@@ -43,7 +44,6 @@ class ConversionTask {
     this.audioQuality = 128,
     this.audioBitrate = 192,
     this.audioCodec = 'aac',
-    // AGGIUNGI QUESTI PARAMETRI
     this.videoCodec = 'libx264',
     this.videoBitrate = 4000,
     this.videoBitrateMode = 'crf',
@@ -75,23 +75,14 @@ class ConversionTask {
     }
   }
 
-  String get mediaTypeIcon {
-    switch (mediaType) {
-      case MediaType.video:
-        return '🎬';
-      case MediaType.audio:
-        return '🎵';
-      case MediaType.image:
-        return '🖼️';
-    }
-  }
+  IconData get mediaTypeIcon => mediaType.icon;
 
-  // NUOVO: Descrizione codec video
+  // Human-readable video codec name
   String get videoCodecName {
     return _getVideoCodecName(videoCodec);
   }
 
-  // NUOVO: Descrizione qualità video
+  // Quality label depending on the bitrate mode
   String get videoQualityDescription {
     if (videoBitrateMode == 'crf') {
       return 'CRF: $videoQuality';
@@ -100,7 +91,7 @@ class ConversionTask {
     }
   }
 
-  // METODI STATICI PER CODEC VIDEO (invece di MediaType.getVideoCodecName)
+  // Codec names shared with the format selector
   static String _getVideoCodecName(String codec) {
     switch (codec) {
       case 'libx264':
@@ -151,7 +142,6 @@ class ConversionTask {
       'audioQuality': audioQuality,
       'audioBitrate': audioBitrate,
       'audioCodec': audioCodec,
-      // AGGIUNGI QUESTI CAMPI
       'videoCodec': videoCodec,
       'videoBitrate': videoBitrate,
       'videoBitrateMode': videoBitrateMode,
@@ -179,7 +169,6 @@ class ConversionTask {
       audioQuality: map['audioQuality'] ?? 128,
       audioBitrate: map['audioBitrate'] ?? 192,
       audioCodec: map['audioCodec'] ?? 'aac',
-      // AGGIUNGI QUESTI CAMPI
       videoCodec: map['videoCodec'] ?? 'libx264',
       videoBitrate: map['videoBitrate'] ?? 4000,
       videoBitrateMode: map['videoBitrateMode'] ?? 'crf',

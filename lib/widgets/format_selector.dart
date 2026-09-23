@@ -245,12 +245,10 @@ class _FormatChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(),
-      // CORREZIONE: Usa il colore di sfondo del tema Chip
       backgroundColor: Theme.of(context).chipTheme.backgroundColor,
       selectedColor: _getColorForFormat(format).withOpacity(isDark ? 0.7 : 1.0),
       checkmarkColor: Colors.white,
       labelStyle: TextStyle(
-        // CORREZIONE: Usa il colore del testo del tema Chip se non selezionato
         color: isSelected
             ? Colors.white
             : Theme.of(context).chipTheme.labelStyle?.color,
@@ -293,12 +291,10 @@ class _AudioCodecChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(),
-      // CORREZIONE: Usa il colore di sfondo del tema Chip
       backgroundColor: Theme.of(context).chipTheme.backgroundColor,
       selectedColor: _getColorForCodec(codec).withOpacity(isDark ? 0.7 : 1.0),
       checkmarkColor: Colors.white,
       labelStyle: TextStyle(
-        // CORREZIONE: Usa il colore del testo del tema Chip se non selezionato
         color: isSelected
             ? Colors.white
             : Theme.of(context).chipTheme.labelStyle?.color,

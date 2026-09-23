@@ -31,7 +31,7 @@ class SettingsProvider with ChangeNotifier {
   static const String _languageKey = 'app_language';
   static const String _defaultAudioCodecKey = 'default_audio_codec';
   
-  // NUOVE CHIAVI
+  // Video and filter preference keys
   static const String _defaultVideoCodecKey = 'default_video_codec';
   static const String _videoBitrateKey = 'video_bitrate';
   static const String _videoBitrateModeKey = 'video_bitrate_mode';
@@ -50,10 +50,10 @@ class SettingsProvider with ChangeNotifier {
   String _defaultAudioFormat = 'mp3';
   String _defaultImageFormat = 'jpg';
   String _defaultAudioCodec = 'aac';
-  String _defaultVideoCodec = 'libx264'; // NUOVO
+  String _defaultVideoCodec = 'libx264';
   int _audioBitrate = 192;
-  int _videoBitrate = 4000; // NUOVO: bitrate in kbps
-  String _videoBitrateMode = 'crf'; // NUOVO: 'crf' o 'bitrate'
+  int _videoBitrate = 4000; // kbps
+  String _videoBitrateMode = 'crf'; // 'crf' or 'bitrate'
   ThemeMode _themeMode = ThemeMode.system;
   int _videoQuality = 23;
   int _audioQuality = 128;
@@ -152,7 +152,7 @@ class SettingsProvider with ChangeNotifier {
               .toList();
         }
       } catch (e) {
-        appLog('⚠️ Failed to parse benchmark history: $e');
+        appLog('Failed to parse benchmark history: $e');
       }
     }
     notifyListeners();
@@ -208,7 +208,7 @@ class SettingsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // NUOVI METODI PER CODEC VIDEO E BITRATE
+  // Default video codec and bitrate
   Future<void> setDefaultVideoCodec(String codec) async {
     _defaultVideoCodec = codec;
     await prefs.setString(_defaultVideoCodecKey, codec);
@@ -278,7 +278,7 @@ class SettingsProvider with ChangeNotifier {
       preset: effectivePreset,
     );
     if (smoke['success'] != true) {
-      appLog('⚠️ Benchmark preset "$preset" not compatible, fallback to medium');
+      appLog('Benchmark preset "$preset" not compatible, fallback to medium');
       effectivePreset = 'medium';
       final mediumSmoke = await BenchmarkService.validatePresetCompatibility(
         useGpu: _useGpu,
@@ -287,7 +287,7 @@ class SettingsProvider with ChangeNotifier {
         preset: effectivePreset,
       );
       if (mediumSmoke['success'] != true) {
-        appLog('⚠️ Medium preset failed smoke-test, fallback to fast');
+        appLog('Medium preset failed smoke-test, fallback to fast');
         effectivePreset = 'fast';
       }
     }
@@ -341,9 +341,9 @@ class SettingsProvider with ChangeNotifier {
           _benchmarkHistory = _benchmarkHistory.sublist(0, 20);
         }
         await prefs.setString(_benchmarkHistoryKey, json.encode(_benchmarkHistory));
-        appLog('🏁 Benchmark complete: best preset = $bestPreset, codec=${result['codec']}');
+        appLog('Benchmark complete: best preset = $bestPreset, codec=${result['codec']}');
       } else {
-        appLog('⚠️ Benchmark failed: ${result['error']}');
+        appLog('Benchmark failed: ${result['error']}');
       }
       return result;
     } finally {
@@ -370,11 +370,11 @@ class SettingsProvider with ChangeNotifier {
         return;
       }
       if (currentSignature != _lastBenchmarkSignature) {
-        appLog('🔁 Benchmark auto-rerun: ffmpeg/GPU signature changed');
+        appLog('Benchmark auto-rerun: ffmpeg/GPU signature changed');
         await runUniversalBenchmark();
       }
     } catch (e) {
-      appLog('⚠️ Auto benchmark check failed: $e');
+      appLog('Auto benchmark check failed: $e');
     }
   }
 

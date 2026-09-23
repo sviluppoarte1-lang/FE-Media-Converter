@@ -7,60 +7,108 @@
 
 # FE Media Converter
 
-FE Media Converter (Video Converter Pro) is a Linux desktop media toolkit built with Flutter.  
-It wraps a powerful FFmpeg-based workflow behind a clean interface so you can convert video, audio, and images, apply advanced filters, and process multiple files in batch without long command-line commands.
+FE Media Converter (Video Converter Pro) is a Linux desktop media toolkit built with Flutter.
+It puts an FFmpeg-based pipeline behind a straightforward interface: batch-convert video, audio
+and images, tune quality, and apply professional filters without typing long command lines.
 
 Official repository: [https://github.com/sviluppoarte1-lang/Fe-Media-Converter](https://github.com/sviluppoarte1-lang/Fe-Media-Converter)
 
-## Features
+## Media modes
 
-- Convert between common video, audio, and image formats
-- Batch conversion queue with progress tracking
-- Advanced video, audio, and image filter controls
-- GPU-accelerated encoding when available (NVIDIA, Intel, AMD, VAAPI, Apple VideoToolbox)
-- AI-related enhancement pipeline integration for quality restoration workflows
-- In-app dependency checks and guided FFmpeg setup on Linux
-- Drag and drop file support
-- Multi-language UI support
+- **Video**: mp4, avi, mkv, webm, mov, flv, wmv, mpeg, ts — codecs H.264, HEVC,
+  VP8, VP9, MPEG-4, AV1 (plus hardware encoders when available).
+- **Audio**: mp3, wav, aac, flac, ogg, m4a, wma, opus — including audio
+  extraction from video files.
+- **Image**: jpg, jpeg, png, webp, bmp, tiff, heic — with resize, custom
+  resolution and AI upscaling options.
 
-## Supported Workflows
+## Conversion workflow
 
-- **Video conversion** with codec, quality, bitrate, and filter controls
-- **Audio extraction** from video and direct audio conversion
-- **Image conversion** with resizing, sharpening, denoise, and color adjustments
-- **Queue processing** for multiple files and mixed conversion sessions
+- Batch queue with pause, resume, stop and concurrent jobs, progress tracking,
+  time remaining and per-task error reporting.
+- Constant quality (CRF) or target bitrate modes, with a benchmark service
+  that validates preset compatibility against your system.
+- Add files via picker, drag and drop, or by opening media with the app
+  (file arguments are passed through to the queue).
+- Dependency check screen with guided FFmpeg install, in-app user guide,
+  and a persistent application log for troubleshooting.
 
-## Requirements
+## Video filters
 
-- Linux (primary target platform)
-- FFmpeg installed and available in `PATH`
-- Python 3 (required by some advanced processing pipelines)
+Denoise (strength, temporal, method), sharpening (unsharp mask, adaptive,
+edge), brightness, contrast, saturation, gamma, stabilization, deinterlace,
+color profiles and cinematic presets, curves, HSV controls, RGB color balance,
+film grain, HDR tone mapping, debanding, artifact removal and compression
+cleanup, chroma upsampling control, vibrance, texture boost and detail
+enhancement.
 
-> The app includes runtime checks for dependencies and can guide users through FFmpeg installation/update steps.
+## GPU acceleration
 
+Optional hardware encoding with automatic capability detection: NVIDIA NVENC,
+Intel Quick Sync, AMD AMF, with per-vendor encoding presets. Falls back to
+software encoding when the GPU or driver cannot handle the job.
 
+## AI tools (optional)
 
-Release bundle output:
+- **DRUNet denoise / deblur / upscale / JPEG restore** running on ONNX Runtime
+  (CPU, CUDA provider when available), with OpenCV fallback when no model
+  or runtime is present. Models are bundled with the packages.
+- **Scene detection and splitting** via PySceneDetect, plus analysis helpers
+  used for conversion presets.
+- First-launch dialogs set up the Python environment and models for you;
+  everything is managed from the models panel.
 
-`build/linux/x64/release/bundle/`
+## Audio tools
 
-## Linux Packaging
+Volume, 10-band graphic equalizer with presets (flat, bass/treble boost,
+voice, rock, pop, jazz, classical), loudness normalization, noise removal
+with threshold, dynamic compression and reverb.
 
-This project includes scripts for Linux distribution packages:
+## Appearance and languages
 
-- Debian package script: `scripts/build_deb.sh`
-- RPM package script: `scripts/build_rpm.sh`
-- AppImage package script: `scripts/build_appimage.sh`
+Light, dark and system themes. UI translations included for English, Italian,
+French, German, Spanish and Portuguese, with first-launch language selection.
 
-Metadata files for software centers/AppStream are included under `linux/` and packaging directories.
+## Install
+
+### Snap (recommended)
+
+```bash
+sudo snap install fe-media-converter
+```
+
+FFmpeg, models and helpers are bundled inside the snap — nothing else to install.
+
+### Debian package
+
+Install `video-converter-pro_*_amd64.deb` from the releases page. Everything
+is integrated under `/usr/share/video-converter-pro/` (bundled FFmpeg,
+DRUNet models, Python scripts); system dependencies are pulled in via apt.
+The optional Python environment (~900 MB with NumPy, OpenCV, ONNX Runtime,
+PySceneDetect) is created on first launch.
+
+## Build from source
+
+Requirements: Flutter stable with Linux desktop enabled, `cmake`, `ninja`,
+`clang`, `libgtk-3-dev`, `liblzma-dev`.
+
+```bash
+flutter pub get
+flutter build linux --release
+```
+
+The bundle lands in `build/linux/x64/release/bundle/`. Snap builds use
+`snapcraft` (see `snapcraft.yaml`); Debian and AppImage helpers live in
+`package_deb/` and `scripts/`.
 
 ## Notes
 
-- FFmpeg is the core engine used for transcoding and media processing.
-- Some advanced features may require additional Python packages and model files.
-- Runtime behavior can vary depending on GPU drivers and installed codec support.
+- FFmpeg is the core transcoding engine.
+- Advanced AI features need the Python environment described above.
+- Behavior can vary with GPU drivers and installed codec support —
+  check the in-app log if a conversion fails.
 
 ## License
 
-This repository currently does not declare a top-level license file.  
-If you plan to distribute or fork the project, add an explicit `LICENSE` file.
+MIT — see [LICENSE.md](LICENSE.md). Bundled third-party components
+(FFmpeg, Python packages, Flutter SDK) keep their own licenses.

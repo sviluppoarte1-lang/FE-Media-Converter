@@ -106,7 +106,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'FE Media Converter 🎬🎵🖼️'**
+  /// **'FE Media Converter'**
   String get appTitle;
 
   /// No description provided for @conversion.
@@ -132,12 +132,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About'**
   String get about;
-
-  /// No description provided for @donateNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Donate Now'**
-  String get donateNow;
 
   /// No description provided for @close.
   ///
@@ -2431,50 +2425,95 @@ abstract class AppLocalizations {
   /// **'DRUNet setup failed: {error}'**
   String drunetEnvInstallFailed(String error);
 
-  /// No description provided for @drunetModeLabel.
-  String get drunetModeLabel;
-
-  /// No description provided for @drunetModeDenoise.
-  String get drunetModeDenoise;
-
-  /// No description provided for @drunetModeDeblur.
-  String get drunetModeDeblur;
-
-  /// No description provided for @drunetModeUpscale.
-  String get drunetModeUpscale;
-
-  /// No description provided for @drunetModeJpegRestore.
-  String get drunetModeJpegRestore;
-
-  /// No description provided for @drunetUpscaleFactor.
-  String get drunetUpscaleFactor;
-
-  /// No description provided for @drunetDeblurStrength.
-  String get drunetDeblurStrength;
-
-  /// No description provided for @drunetNoiseLevel.
-  String get drunetNoiseLevel;
-
-  /// No description provided for @drunetDeviceLabel.
-  String get drunetDeviceLabel;
-
-  /// No description provided for @drunetDeviceAuto.
-  String get drunetDeviceAuto;
-
-  /// No description provided for @drunetDeviceCPU.
-  String get drunetDeviceCPU;
-
-  /// No description provided for @drunetDeviceCUDA.
-  String get drunetDeviceCUDA;
-
-  /// No description provided for @enableDRUNet.
-  String get enableDRUNet;
-
   /// No description provided for @conversionProcessingRate.
   ///
   /// In en, this message translates to:
   /// **'~{fps} fps'**
   String conversionProcessingRate(String fps);
+
+  /// No description provided for @donateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Donate Now'**
+  String get donateNow;
+
+  /// No description provided for @drunetModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DRUNet mode'**
+  String get drunetModeLabel;
+
+  /// No description provided for @drunetModeDenoise.
+  ///
+  /// In en, this message translates to:
+  /// **'Denoising'**
+  String get drunetModeDenoise;
+
+  /// No description provided for @drunetModeDeblur.
+  ///
+  /// In en, this message translates to:
+  /// **'Deblur'**
+  String get drunetModeDeblur;
+
+  /// No description provided for @drunetModeUpscale.
+  ///
+  /// In en, this message translates to:
+  /// **'Upscaling'**
+  String get drunetModeUpscale;
+
+  /// No description provided for @drunetModeJpegRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'JPEG restore'**
+  String get drunetModeJpegRestore;
+
+  /// No description provided for @drunetUpscaleFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Upscale factor'**
+  String get drunetUpscaleFactor;
+
+  /// No description provided for @drunetDeblurStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Deblur strength'**
+  String get drunetDeblurStrength;
+
+  /// No description provided for @drunetNoiseLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Noise level'**
+  String get drunetNoiseLevel;
+
+  /// No description provided for @drunetDeviceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get drunetDeviceLabel;
+
+  /// No description provided for @drunetDeviceAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get drunetDeviceAuto;
+
+  /// No description provided for @drunetDeviceCPU.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get drunetDeviceCPU;
+
+  /// No description provided for @drunetDeviceCUDA.
+  ///
+  /// In en, this message translates to:
+  /// **'CUDA (NVIDIA)'**
+  String get drunetDeviceCUDA;
+
+  /// No description provided for @enableDRUNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable DRUNet (images)'**
+  String get enableDRUNet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

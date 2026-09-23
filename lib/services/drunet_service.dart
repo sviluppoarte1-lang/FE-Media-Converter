@@ -83,7 +83,7 @@ class DRUNetService {
 
       return importCheck.exitCode == 0;
     } catch (e) {
-      appLog('⚠️ [DRUNet] Dependency check failed: $e');
+      appLog('[DRUNet] Dependency check failed: $e');
       return false;
     }
   }
@@ -159,7 +159,7 @@ class DRUNetService {
         args.addAll(['--model-path', modelPath]);
       }
 
-      appLog('🔧 [DRUNet] Denoising frame: $framePath');
+      appLog('[DRUNet] Denoising frame: $framePath');
       appLog('   → Python: $pythonExe');
       appLog('   → Noise level: $noiseLevel');
       appLog('   → Device: $device');
@@ -177,7 +177,7 @@ class DRUNetService {
       
       if (process.exitCode != 0) {
         final errorOutput = process.stderr.toString();
-        appLog('❌ [DRUNet] Error: $errorOutput');
+        appLog('[DRUNet] Error: $errorOutput');
         return {
           'success': false,
           'error': errorOutput.isNotEmpty ? errorOutput : 'Unknown error during denoising'
@@ -196,7 +196,7 @@ class DRUNetService {
       try {
         final result = json.decode(output) as Map<String, dynamic>;
         if (result['success'] == true) {
-          appLog('✅ [DRUNet] Frame denoised successfully: $outputPath');
+          appLog('[DRUNet] Frame denoised successfully: $outputPath');
         }
         return result;
       } catch (e) {
@@ -206,7 +206,7 @@ class DRUNetService {
         };
       }
     } catch (e) {
-      appLog('❌ [DRUNet] Exception: $e');
+      appLog('[DRUNet] Exception: $e');
       return {
         'success': false,
         'error': 'Exception during denoising: $e'
@@ -706,7 +706,7 @@ class DRUNetService {
         args.addAll(['--model-path', modelPath]);
       }
 
-      appLog('🔧 [DRUNet] Processing frame (mode: $mode): $framePath');
+      appLog('[DRUNet] Processing frame (mode: $mode): $framePath');
 
       final n = Platform.numberOfProcessors.clamp(1, 32).toString();
       final env = Map<String, String>.from(Platform.environment);
@@ -731,7 +731,7 @@ class DRUNetService {
       try {
         final result = json.decode(output) as Map<String, dynamic>;
         if (result['success'] == true) {
-          appLog('✅ [DRUNet] Frame processed (mode: $mode): $outputPath');
+          appLog('[DRUNet] Frame processed (mode: $mode): $outputPath');
         }
         return result;
       } catch (e) {

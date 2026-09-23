@@ -7,7 +7,7 @@ class FrameByFrameAnalyzer {
   /// Restituisce statistiche dettagliate per ogni frame
   static Future<Map<String, dynamic>> analyzeFrameByFrame(String inputPath) async {
     try {
-      appLog('🔍 [FrameByFrame] Inizio analisi frame-per-frame...');
+      appLog('[FrameByFrame] Inizio analisi frame-per-frame...');
       
       // Usa FFmpeg per analizzare un numero limitato di frame (ottimizzato per velocità)
       // RIDOTTO: Analizza solo 15 frame invece di tutti per evitare blocchi
@@ -25,9 +25,9 @@ class FrameByFrameAnalyzer {
       // Analizza rumore pixel-per-pixel
       final noiseAnalysis = _analyzeNoiseLevels(frameStats);
       
-      appLog('✅ [FrameByFrame] Analisi completata: ${frameStats.length} frame analizzati');
-      appLog('   📊 Rumore medio: ${noiseAnalysis['average_noise']?.toStringAsFixed(2)}');
-      appLog('   📊 Frame con rumore alto: ${noiseAnalysis['high_noise_frames']}');
+      appLog('[FrameByFrame] Analisi completata: ${frameStats.length} frame analizzati');
+      appLog('   Rumore medio: ${noiseAnalysis['average_noise']?.toStringAsFixed(2)}');
+      appLog('   Frame con rumore alto: ${noiseAnalysis['high_noise_frames']}');
       
       return {
         'success': true,
@@ -37,7 +37,7 @@ class FrameByFrameAnalyzer {
         'recommended_denoise_strength': _calculateDenoiseStrength(noiseAnalysis),
       };
     } catch (e, stackTrace) {
-      appLog('❌ [FrameByFrame] Errore analisi: $e');
+      appLog('[FrameByFrame] Errore analisi: $e');
       appLog('   Stack: $stackTrace');
       return {
         'success': false,
@@ -178,7 +178,7 @@ class FrameByFrameAnalyzer {
   /// Analizza la qualità pixel-per-pixel usando histogram
   static Future<Map<String, dynamic>> analyzePixelQuality(String inputPath) async {
     try {
-      appLog('🔍 [FrameByFrame] Analisi qualità pixel-per-pixel...');
+      appLog('[FrameByFrame] Analisi qualità pixel-per-pixel...');
       
       // Usa FFmpeg histogram per analisi dettagliata
       final process = await Process.run(FFmpegPaths.ffmpegPath, [

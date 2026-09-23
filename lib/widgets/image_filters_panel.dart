@@ -101,19 +101,19 @@ class _ImageFiltersPanelState extends State<ImageFiltersPanel> {
                 _originalResolution = '${width}×${height}';
                 _loadingResolution = false;
               });
-              appLog('✅ Risoluzione caricata: $_originalResolution');
+              appLog('Risoluzione caricata: $_originalResolution');
               return;
             }
           }
         } catch (e) {
-          appLog('❌ Errore parsing JSON: $e');
+          appLog('Errore parsing JSON: $e');
         }
       } else {
-        appLog('❌ ffprobe fallito: ${process.stderr}');
+        appLog('ffprobe fallito: ${process.stderr}');
       }
     } catch (e) {
       if (mounted) {
-        appLog('❌ Errore nel caricamento risoluzione: $e');
+        appLog('Errore nel caricamento risoluzione: $e');
       }
     }
     
@@ -121,7 +121,7 @@ class _ImageFiltersPanelState extends State<ImageFiltersPanel> {
       setState(() {
         _loadingResolution = false;
         if (_originalResolution == null) {
-          appLog('⚠️ Risoluzione non trovata per: ${widget.inputFilePath}');
+          appLog('Risoluzione non trovata per: ${widget.inputFilePath}');
         }
       });
     }
@@ -340,7 +340,7 @@ class _ImageFiltersPanelState extends State<ImageFiltersPanel> {
                   ),
                 ),
 
-              // RIDUZIONE RUMORE
+              // Noise reduction
               _buildFilterSection(
                 title: l10n.noiseReduction,
                 icon: Icons.clean_hands,
@@ -600,7 +600,7 @@ class _ImageFiltersPanelState extends State<ImageFiltersPanel> {
 
               const SizedBox(height: 16),
 
-              // ANTEPRIMA EFFETTI
+              // Effect preview
               _buildEffectPreview(),
             ],
           ],
@@ -959,9 +959,9 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
       // Aggiungi filtri se presenti
       if (filtersList.isNotEmpty) {
         command.addAll(['-vf', filtersList.join(',')]);
-        appLog('🔍 [Preview] Applicando ${filtersList.length} filtri: ${filtersList.join(", ")}');
+        appLog('[Preview] Applicando ${filtersList.length} filtri: ${filtersList.join(", ")}');
       } else {
-        appLog('⚠️ [Preview] Nessun filtro da applicare');
+        appLog('[Preview] Nessun filtro da applicare');
       }
       
       command.addAll([
@@ -970,24 +970,24 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
         previewFile.path,
       ]);
 
-      appLog('📋 [Preview] Comando FFmpeg: ffmpeg ${command.join(" ")}');
-      appLog('📁 [Preview] Input: ${widget.imagePath}');
-      appLog('📁 [Preview] Output: ${previewFile.path}');
+      appLog('[Preview] Comando FFmpeg: ffmpeg ${command.join(" ")}');
+      appLog('[Preview] Input: ${widget.imagePath}');
+      appLog('[Preview] Output: ${previewFile.path}');
 
       final process = await Process.run('ffmpeg', command);
       
-      appLog('📊 [Preview] Exit code: ${process.exitCode}');
+      appLog('[Preview] Exit code: ${process.exitCode}');
       if (process.stdout.toString().isNotEmpty) {
-        appLog('📤 [Preview] Stdout: ${process.stdout}');
+        appLog('[Preview] Stdout: ${process.stdout}');
       }
       if (process.stderr.toString().isNotEmpty) {
-        appLog('⚠️ [Preview] Stderr: ${process.stderr}');
+        appLog('[Preview] Stderr: ${process.stderr}');
       }
       
       // Verifica che il file sia stato creato
       if (previewFile.existsSync()) {
         final fileSize = await previewFile.length();
-        appLog('✅ [Preview] File creato: ${previewFile.path} (${fileSize} bytes)');
+        appLog('[Preview] File creato: ${previewFile.path} (${fileSize} bytes)');
         
         if (mounted) {
           setState(() {
@@ -997,7 +997,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
         }
       } else if (process.exitCode == 0) {
         // FFmpeg ha successo ma il file non esiste - potrebbe essere un problema di percorso
-        appLog('❌ [Preview] FFmpeg ha successo ma il file non esiste!');
+        appLog('[Preview] FFmpeg ha successo ma il file non esiste!');
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
           setState(() {
@@ -1010,7 +1010,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
         }
       } else {
         // FFmpeg ha fallito
-        appLog('❌ [Preview] FFmpeg fallito con exit code ${process.exitCode}');
+        appLog('[Preview] FFmpeg fallito con exit code ${process.exitCode}');
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
           setState(() {
@@ -1027,8 +1027,8 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
         }
       }
     } catch (e, stackTrace) {
-      appLog('❌ [Preview] Errore generazione anteprima: $e');
-      appLog('📚 [Preview] Stack trace: $stackTrace');
+      appLog('[Preview] Errore generazione anteprima: $e');
+      appLog('[Preview] Stack trace: $stackTrace');
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         setState(() {
@@ -1088,7 +1088,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                             File(_previewPath!),
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
-                              appLog('❌ [Preview] Errore caricamento immagine: $error');
+                              appLog('[Preview] Errore caricamento immagine: $error');
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,

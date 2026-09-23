@@ -198,7 +198,7 @@ class FFmpegService {
       await _checkAvailableFilters();
       await _checkGpuAcceleration();
     } catch (e) {
-      appLog('⚠️ [FFmpegService] Warmup capabilities failed: $e');
+      appLog('[FFmpegService] Warmup capabilities failed: $e');
     }
   }
 
@@ -241,10 +241,10 @@ class FFmpegService {
   }) async {
     String? drunetTempPath;
     try {
-      appLog('🔧 [FFmpegService] Starting conversion for task: $taskId');
-      appLog('📁 Input: $inputPath');
-      appLog('📁 Output: $outputPath');
-      appLog('🎬 Media Type: $mediaType');
+      appLog('[FFmpegService] Starting conversion for task: $taskId');
+      appLog('Input: $inputPath');
+      appLog('Output: $outputPath');
+      appLog('Media Type: $mediaType');
       onProgress(0.01, 'phase.preparing');
 
       Map<String, dynamic>? videoAnalysis;
@@ -253,14 +253,14 @@ class FFmpegService {
           Platform.environment['FE_ENABLE_PRE_ANALYSIS'] == '1';
       if (runBlockingPreAnalysis) {
         onProgress(0.02, 'phase.analyzing');
-        appLog('🔍 [FFmpegService] Eseguendo analisi video pre-rendering...');
+        appLog('[FFmpegService] Eseguendo analisi video pre-rendering...');
         appLog('   → Analisi luminosità e contrasto in corso (timeout: 4s)...');
         try {
           videoAnalysis = await VideoPreProcessor.analyzeVideoQuality(inputPath)
               .timeout(
                 const Duration(seconds: 4),
                 onTimeout: () {
-                  appLog('⚠️ [FFmpegService] Timeout analisi video (4s) - continuo senza correzioni automatiche');
+                  appLog('[FFmpegService] Timeout analisi video (4s) - continuo senza correzioni automatiche');
                   return {
                     'success': false,
                     'error': 'Analisi timeout dopo 4 secondi',
@@ -270,7 +270,7 @@ class FFmpegService {
                 },
               );
         } catch (e) {
-          appLog('⚠️ [FFmpegService] Errore durante analisi video: $e - continuo senza correzioni');
+          appLog('[FFmpegService] Errore durante analisi video: $e - continuo senza correzioni');
           videoAnalysis = {
             'success': false,
             'error': 'Errore analisi: $e',
@@ -279,8 +279,8 @@ class FFmpegService {
           };
         }
         if (videoAnalysis['success'] == true) {
-          appLog('📊 Video analysis completed - Quality issues: ${videoAnalysis['quality_issues']?.length ?? 0}');
-          appLog('💡 Recommendations: ${videoAnalysis['recommendations']}');
+          appLog('Video analysis completed - Quality issues: ${videoAnalysis['quality_issues']?.length ?? 0}');
+          appLog('Recommendations: ${videoAnalysis['recommendations']}');
           
           final pixelAnalysis = videoAnalysis['pixel_analysis'] as Map<String, dynamic>?;
           if (pixelAnalysis != null && pixelAnalysis['success'] == true) {
@@ -291,7 +291,7 @@ class FFmpegService {
             final recommendedBrightness = pixelAnalysis['recommended_brightness'] as double? ?? 0.0;
             final recommendedContrast = pixelAnalysis['recommended_contrast'] as double? ?? 1.0;
             
-            appLog('   📊 Analisi pixel-per-pixel:');
+            appLog('   Analisi pixel-per-pixel:');
             appLog('      Luminosità media: ${avgBrightness?.toStringAsFixed(2) ?? "N/A"}');
             appLog('      Contrasto medio: ${avgContrast?.toStringAsFixed(2) ?? "N/A"}');
             appLog('      Troppo scuro: $isTooDark');
@@ -300,17 +300,17 @@ class FFmpegService {
             appLog('      Correzione contrast raccomandata: ${recommendedContrast.toStringAsFixed(3)}');
             
             if (isTooDark || lowContrast) {
-              appLog('   ⚠️ Problemi rilevati - verranno applicate correzioni automatiche');
+              appLog('   Problemi rilevati - verranno applicate correzioni automatiche');
             } else {
-              appLog('   ✅ Luminosità e contrasto ottimali - nessuna correzione necessaria');
+              appLog('   Luminosità e contrasto ottimali - nessuna correzione necessaria');
             }
           }
         } else {
-          appLog('⚠️ [FFmpegService] Analisi video fallita: ${videoAnalysis['error']}');
+          appLog('[FFmpegService] Analisi video fallita: ${videoAnalysis['error']}');
           appLog('   → Continuo senza correzioni automatiche');
         }
       } else if (mediaType == MediaType.video) {
-        appLog('⚡ [FFmpegService] Pre-analisi video bloccante disabilitata (FE_ENABLE_PRE_ANALYSIS != 1)');
+        appLog('[FFmpegService] Pre-analisi video bloccante disabilitata (FE_ENABLE_PRE_ANALYSIS != 1)');
       }
 
       var conversionInputPath = inputPath;
@@ -334,7 +334,7 @@ class FFmpegService {
       }
 
       final sanitizedOutputPath = outputValidation['sanitized_path']!;
-      appLog('✅ Output path sanitized: $sanitizedOutputPath');
+      appLog('Output path sanitized: $sanitizedOutputPath');
 
       final audioExtRegexEarly = RegExp(
         r'\.(mp3|wav|aac|flac|ogg|m4a|wma|opus)$',
@@ -368,7 +368,7 @@ class FFmpegService {
           if (drDeps) {
             onProgress(0.058, 'phase.drunet.install_done');
           } else {
-            appLog('⚠️ [FFmpegService] DRUNet auto dependency setup failed: ${depInstall['error']}');
+            appLog('[FFmpegService] DRUNet auto dependency setup failed: ${depInstall['error']}');
           }
         }
         if (drDeps) {
@@ -407,10 +407,10 @@ class FFmpegService {
           );
           if (drResult['success'] == true && drResult['output_path'] != null) {
             conversionInputPath = drResult['output_path'] as String;
-            appLog('🧠 [FFmpegService] DRUNet pre-pass completato → input temporaneo');
+            appLog('[FFmpegService] DRUNet pre-pass completato → input temporaneo');
           } else {
             appLog(
-              '⚠️ [FFmpegService] DRUNet pre-pass saltato: ${drResult['error'] ?? 'unknown'}',
+              '[FFmpegService] DRUNet pre-pass saltato: ${drResult['error'] ?? 'unknown'}',
             );
             try {
               final f = File(drOutPath);
@@ -421,7 +421,7 @@ class FFmpegService {
         } else {
           onProgress(0.06, 'phase.drunet.not_available');
           appLog(
-            '⚠️ [FFmpegService] DRUNet: assicurati che scripts/python/drunet_denoiser.py esista '
+            '[FFmpegService] DRUNet: assicurati che scripts/python/drunet_denoiser.py esista '
             'e che numpy/opencv siano installati (es. scripts/python/setup_python_env.sh)',
           );
         }
@@ -439,7 +439,7 @@ class FFmpegService {
         final detectedGpu = _availableGpuAccelerations!['detected_gpu'] as String?;
         if (detectedGpu != null && detectedGpu != 'none') {
           effectiveGpuType = detectedGpu;
-          appLog('🔍 Auto-detected GPU: $effectiveGpuType');
+          appLog('Auto-detected GPU: $effectiveGpuType');
         }
       }
       
@@ -467,7 +467,7 @@ class FFmpegService {
         command.addAll(['-i', conversionInputPath]);
         command.addAll(['-threads', safeThreads.toString()]);
         appLog(
-          '🖼️ Immagini: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"} '
+          'Immagini: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"} '
           '(threads: $safeThreads)',
         );
       } else if (mediaType == MediaType.audio) {
@@ -477,7 +477,7 @@ class FFmpegService {
         command.addAll(['-i', conversionInputPath]);
         safeThreads = _getSafeThreadCount(cpuThreads, false);
         useGpuEncodeVideo = false;
-        appLog('🎵 Audio: CPU only (threads: $safeThreads, no GPU)');
+        appLog('Audio: CPU only (threads: $safeThreads, no GPU)');
       } else {
         command = [FFmpegPaths.ffmpegPath, '-y', '-loglevel', 'info'];
         command.addAll(['-analyzeduration', '10000000']);
@@ -493,14 +493,14 @@ class FFmpegService {
           if (gpuArgs.isNotEmpty) {
             command.addAll(gpuArgs);
             gpuHwAccelDecodeActive = true;
-            appLog('🎬 Video: hwaccel decode attivo ($effectiveGpuType)');
+            appLog('Video: hwaccel decode attivo ($effectiveGpuType)');
           }
         }
         command.addAll(['-i', conversionInputPath]);
         safeThreads = _getSafeThreadCount(cpuThreads, useGpuEncodeVideo);
         command.addAll(['-threads', safeThreads.toString()]);
         appLog(
-          '🎬 Video: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"}, '
+          'Video: hwaccel decode=${gpuHwAccelDecodeActive ? "yes" : "no"}, '
           'encode GPU=${useGpuEncodeVideo ? "yes" : "no"} (threads: $safeThreads)',
         );
       }
@@ -508,7 +508,7 @@ class FFmpegService {
       List<String> finalCommand;
 
       if (isAudioExtraction) {
-        appLog('🎵 [FFmpegService] Estrazione audio da video - comando dedicato');
+        appLog('[FFmpegService] Estrazione audio da video - comando dedicato');
         useGpuEncodeVideo = false;
         finalCommand = _buildAudioExtractionCommand(
           inputPath: conversionInputPath,
@@ -561,7 +561,7 @@ class FFmpegService {
         }
       }
 
-      appLog('⚡ Final FFmpeg command ready');
+      appLog('Final FFmpeg command ready');
       onProgress(0.33, 'phase.encoding_start');
 
       final reportGpuUsed = switch (mediaType) {
@@ -602,7 +602,7 @@ class FFmpegService {
           if (f.existsSync()) await f.delete();
         } catch (_) {}
       }
-      appLog('💥 Critical error in convertMedia: $e');
+      appLog('Critical error in convertMedia: $e');
       return {
         'success': false,
         'error': 'Errore critico durante la conversione: $e'
@@ -628,7 +628,7 @@ class FFmpegService {
     required String gpuType,
     required Map<String, dynamic>? videoAnalysis,
   }) async {
-    appLog('🎬 Building optimized video command with analysis...');
+    appLog('Building optimized video command with analysis...');
 
     final optimizedFilters = await _applyAnalysisOptimizations(videoFilters, videoAnalysis);
     
@@ -642,7 +642,7 @@ class FFmpegService {
     if (videoFilterChain.isNotEmpty) {
       final optimizedFilterChain = _optimizeFilterChainForPerformance(videoFilterChain, useGpu);
       command.addAll(['-vf', optimizedFilterChain]);
-      appLog('🎨 Optimized video filters applied: $optimizedFilterChain');
+      appLog('Optimized video filters applied: $optimizedFilterChain');
       
       command.addAll(['-thread_queue_size', useGpu ? '512' : '384']);
       final filterThreads = cpuThreads.clamp(1, 32);
@@ -682,10 +682,10 @@ class FFmpegService {
       } else {
         command.addAll(['-crf', optimizedQuality.toString()]);
       }
-      appLog('📊 Using optimized quality: $optimizedQuality');
+      appLog('Using optimized quality: $optimizedQuality');
     } else {
       command.addAll(['-b:v', '${optimizedQuality}k']);
-      appLog('📊 Using optimized bitrate: ${optimizedQuality}k');
+      appLog('Using optimized bitrate: ${optimizedQuality}k');
     }
 
     final safeAudioQuality = audioQuality.clamp(128, 320);
@@ -723,9 +723,9 @@ class FFmpegService {
     final pixelFormat = _getOptimalPixelFormat(optimizedVideoCodec, useGpu, videoAnalysis);
     if (pixelFormat != null) {
       command.addAll(['-pix_fmt', pixelFormat]);
-      appLog('   📐 Pixel format: $pixelFormat');
+      appLog('   Pixel format: $pixelFormat');
     } else {
-      appLog('   📐 Pixel format: preservato originale (nessuna conversione forzata)');
+      appLog('   Pixel format: preservato originale (nessuna conversione forzata)');
     }
 
     if (videoAnalysis != null && videoAnalysis['needs_advanced_processing'] == true) {
@@ -770,7 +770,7 @@ class FFmpegService {
 
     command.add(outputPath);
     
-    appLog('✅ Optimized video command built successfully');
+    appLog('Optimized video command built successfully');
     return command;
   }
 
@@ -788,13 +788,13 @@ class FFmpegService {
     
     var optimizedFilters = originalFilters;
 
-    appLog('🔍 Applying optimizations based on analysis:');
+    appLog('Applying optimizations based on analysis:');
     appLog('   Issues: $issues');
     appLog('   Recommendations: $recommendations');
 
     final pixelAnalysis = analysis['pixel_analysis'] as Map<String, dynamic>?;
     if (pixelAnalysis != null && pixelAnalysis['success'] == true) {
-      appLog('   ✅ Analisi pixel-per-pixel disponibile - applicando correzioni automatiche');
+      appLog('   Analisi pixel-per-pixel disponibile - applicando correzioni automatiche');
       
       final recommendedBrightness = pixelAnalysis['recommended_brightness'] as double?;
       final recommendedContrast = pixelAnalysis['recommended_contrast'] as double?;
@@ -803,13 +803,13 @@ class FFmpegService {
       final isTooBright = pixelAnalysis['is_too_bright'] as bool? ?? false;
       final lowContrast = pixelAnalysis['low_contrast'] as bool? ?? false;
       
-      appLog('   📊 Pixel analysis detected:');
+      appLog('   Pixel analysis detected:');
       appLog('      Average brightness: ${pixelAnalysis['average_brightness']?.toStringAsFixed(2)}');
       appLog('      Average contrast: ${pixelAnalysis['average_contrast']?.toStringAsFixed(2)}');
       appLog('      Too dark: $isTooDark, Too bright: $isTooBright, Low contrast: $lowContrast');
       
       if (recommendedBrightness != null && recommendedBrightness > 0.05 && isTooDark) {
-        appLog('   🔧 CORREZIONE LUMINOSITÀ: Video troppo scuro, applicando brightness ${recommendedBrightness.toStringAsFixed(3)}');
+        appLog('   Auto brightness: dark video, applying brightness ${recommendedBrightness.toStringAsFixed(3)}');
         final currentBrightness = originalFilters.brightness;
         final newBrightness = (currentBrightness + recommendedBrightness).clamp(0.0, 0.3);  // Solo positivo
         optimizedFilters = optimizedFilters.copyWith(
@@ -817,14 +817,14 @@ class FFmpegService {
         );
         appLog('      → Brightness finale: ${newBrightness.toStringAsFixed(3)} (correzione applicata)');
       } else {
-        appLog('   ✅ Video normale/chiaro - GARANTITO brightness=0.0 (nessuna modifica)');
+        appLog('   Video normale/chiaro - GARANTITO brightness=0.0 (nessuna modifica)');
         optimizedFilters = optimizedFilters.copyWith(
           brightness: 0.0,  // FORZA a 0.0 per video normali
         );
       }
       
       if (recommendedContrast != null && recommendedContrast > 1.0 && lowContrast) {
-        appLog('   🔧 CORREZIONE CONTRASTO: Contrasto basso, applicando contrast ${recommendedContrast.toStringAsFixed(3)}');
+        appLog('   Auto contrast: low contrast, applying contrast ${recommendedContrast.toStringAsFixed(3)}');
         final currentContrast = originalFilters.contrast;
         final newContrast = (currentContrast * recommendedContrast).clamp(1.0, 1.5);  // Mai < 1.0
         optimizedFilters = optimizedFilters.copyWith(
@@ -832,21 +832,21 @@ class FFmpegService {
         );
         appLog('      → Contrast finale: ${newContrast.toStringAsFixed(3)} (correzione applicata)');
       } else {
-        appLog('   ✅ Contrasto normale - GARANTITO contrast=1.0 (nessuna modifica)');
+        appLog('   Contrasto normale - GARANTITO contrast=1.0 (nessuna modifica)');
         optimizedFilters = optimizedFilters.copyWith(
           contrast: 1.0,  // FORZA a 1.0 per video normali
         );
       }
       
       if (recommendedGamma != null && recommendedGamma > 1.0 && isTooDark) {
-        appLog('   🔧 CORREZIONE GAMMA: Video troppo scuro, applicando gamma ${recommendedGamma.toStringAsFixed(3)}');
+        appLog('   Auto gamma: dark video, applying gamma ${recommendedGamma.toStringAsFixed(3)}');
         final safeGamma = recommendedGamma.clamp(1.0, 1.3);
         optimizedFilters = optimizedFilters.copyWith(
           gamma: safeGamma,
         );
         appLog('      → Gamma finale: ${safeGamma.toStringAsFixed(3)} (correzione applicata)');
       } else {
-        appLog('   ✅ Gamma normale - GARANTITO gamma=1.0 (nessuna modifica)');
+        appLog('   Gamma normale - GARANTITO gamma=1.0 (nessuna modifica)');
         optimizedFilters = optimizedFilters.copyWith(
           gamma: 1.0,  // FORZA a 1.0 per video normali
         );
@@ -918,12 +918,12 @@ class FFmpegService {
     bool usingGpu,
     Map<String, dynamic>? analysis
   ) async {
-    // IMPORTANTE: Preserva il color range originale per evitare scurimento
+    // Preserve the original color range to avoid darkening
     // I video possono essere full range (0-255) o limited range (16-235)
     // La conversione errata può scurire i video
     final stages = <List<String>>[];
     
-    appLog('🎨 Building optimized filter chain...');
+    appLog('Building optimized filter chain...');
 
     stages.add(await _buildPreProcessingStage(filters, inputPath, analysis));
     
@@ -938,7 +938,7 @@ class FFmpegService {
     final filterChain = _combineFilterStages(stages, usingGpu);
     
     final simplifiedChain = _simplifyFilterChain(filterChain);
-    appLog('🔗 Final filter chain: $simplifiedChain');
+    appLog('Final filter chain: $simplifiedChain');
     
     return simplifiedChain;
   }
@@ -985,7 +985,7 @@ class FFmpegService {
       final recommendedDenoise = frameAnalysis?['recommended_denoise_strength'] as double?;
       if (recommendedDenoise != null && recommendedDenoise > 0) {
         denoiseStrength = recommendedDenoise;
-        appLog('   📊 Usando denoising ottimizzato basato su analisi frame-per-frame: ${denoiseStrength.toStringAsFixed(2)}');
+        appLog('   Usando denoising ottimizzato basato su analisi frame-per-frame: ${denoiseStrength.toStringAsFixed(2)}');
       }
     }
     
@@ -1000,7 +1000,7 @@ class FFmpegService {
 
     switch (denoiseMethod) {
       case 'nlmeans':
-        appLog('   ⚠️ NL-Means disabilitato (troppo pesante), usando HQDN3D invece');
+        appLog('   NL-Means disabilitato (troppo pesante), usando HQDN3D invece');
         final luma = needsStrongDenoise 
             ? 4.0  // Ridotto per velocità
             : (filters.denoiseStrength * 3.0).clamp(1.0, 6.0);  // Ridotto
@@ -1018,7 +1018,7 @@ class FFmpegService {
           filtersList.add('fftdnoiz=sigma=$sigma:amount=$amount:block=8:overlap=0.5:prev=1:next=1');
           appLog('   → Using FFT Denoising (sigma: $sigma)');
         } else {
-          appLog('   ⚠️ FFT Denoising not available, falling back to HQDN3D');
+          appLog('   FFT Denoising not available, falling back to HQDN3D');
           final luma = needsStrongDenoise ? 6.0 : (filters.denoiseStrength * 4.0).clamp(1.0, 8.0);
           final chroma = luma * 0.75;
           filtersList.add('hqdn3d=$luma:$chroma:$luma:$chroma');
@@ -1034,7 +1034,7 @@ class FFmpegService {
           filtersList.add('vaguedenoiser=threshold=$threshold:method=$method:nsteps=6');
           appLog('   → Using Vague Denoiser (threshold: $threshold)');
         } else {
-          appLog('   ⚠️ Vague Denoiser not available, falling back to HQDN3D');
+          appLog('   Vague Denoiser not available, falling back to HQDN3D');
           final luma = needsStrongDenoise ? 6.0 : (filters.denoiseStrength * 4.0).clamp(1.0, 8.0);
           final chroma = luma * 0.75;
           filtersList.add('hqdn3d=$luma:$chroma:$luma:$chroma');
@@ -1158,9 +1158,9 @@ class FFmpegService {
         filtersList.add('zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p');
         appLog('   → Applying HDR tone mapping (video HDR rilevato)');
       } else if (filters.enableHdrToneMapping && !isHdr) {
-        appLog('   ⚠️ HDR tone mapping richiesto ma video non è HDR - DISABILITATO per evitare scurimento');
+        appLog('   HDR tone mapping richiesto ma video non è HDR - DISABILITATO per evitare scurimento');
       } else {
-        appLog('   ⚠️ HDR tone mapping not available');
+        appLog('   HDR tone mapping not available');
       }
     }
 
@@ -1183,7 +1183,7 @@ class FFmpegService {
       filtersList.add('eq=brightness=$brightnessStr:contrast=$contrastStr:saturation=$saturationStr:gamma=$gammaStr');
       appLog('   → Applying color correction (brightness: $brightnessStr, contrast: $contrastStr, saturation: $saturationStr, gamma: $gammaStr)');
     } else {
-      appLog('   ✅ Nessuna correzione colore necessaria (valori di default)');
+      appLog('   Nessuna correzione colore necessaria (valori di default)');
     }
 
     if (filters.colorBalanceR != 0.0 || filters.colorBalanceG != 0.0 || filters.colorBalanceB != 0.0) {
@@ -1194,7 +1194,7 @@ class FFmpegService {
         filtersList.add('colorbalance=rs=$r:gs=$g:bs=$b');
         appLog('   → Applying color balance (R: $r, G: $g, B: $b)');
       } else {
-        appLog('   ⚠️ Color balance not available, using eq instead');
+        appLog('   Color balance not available, using eq instead');
         final rBoost = filters.colorBalanceR > 0 ? 1.05 : 0.95;
         final gBoost = filters.colorBalanceG > 0 ? 1.05 : 0.95;
         final bBoost = filters.colorBalanceB > 0 ? 1.05 : 0.95;
@@ -1225,7 +1225,7 @@ class FFmpegService {
           appLog('   → Applying curves preset: ${filters.curvesPreset}');
         }
       } else {
-        appLog('   ⚠️ Curves filter not available, using eq instead');
+        appLog('   Curves filter not available, using eq instead');
         switch (filters.curvesPreset) {
           case 'contrast':
             filtersList.add('eq=contrast=1.15');
@@ -1254,7 +1254,7 @@ class FFmpegService {
   List<String> _buildOptimizedPostProcessStage(VideoFilters filters, Map<String, dynamic>? analysis) {
     final filtersList = <String>[];
     
-    // DEBANDING AVANZATO PER COMPRESSIONE PESANTE
+    // Debanding for heavily compressed sources
     final needsDebanding = filters.enableArtifactRemoval || 
                           filters.advancedDebandingMethod != 'none' ||
                           (analysis?['quality_issues']?.contains('heavy_compression') == true);
@@ -1289,7 +1289,7 @@ class FFmpegService {
       }
     }
 
-    // COMPRESSION CLEANUP AVANZATO
+    // Compression cleanup
     if (filters.compressionCleanup > 0) {
       final cleanupStrength = (filters.compressionCleanup * 0.5).clamp(0.1, 0.5);
       // Combina debanding con cleanup leggero
@@ -1299,7 +1299,7 @@ class FFmpegService {
       appLog('   → Applying compression cleanup (strength: $cleanupStrength)');
     }
 
-    // CHROMA UPSCALING MIGLIORATO
+    // Chroma upscaling
     if (filters.chromaUpsampling != 'lanczos') {
       // Il chroma upsampling è gestito automaticamente da FFmpeg
       // ma possiamo forzare un metodo specifico se necessario
@@ -1313,7 +1313,7 @@ class FFmpegService {
         filtersList.add('noise=alls=$grain:allf=t+u');
         appLog('   → Adding film grain (strength: $grain)');
       } else {
-        appLog('   ⚠️ Noise filter not available, skipping film grain');
+        appLog('   Noise filter not available, skipping film grain');
       }
     }
 
@@ -1485,7 +1485,7 @@ class FFmpegService {
         }
       }
 
-      // CHECK FILE ESISTENTE
+      // Reuse or overwrite the existing output file
       if (await outputFile.exists()) {
         if (!overwriteExisting) {
           return {
@@ -1496,7 +1496,7 @@ class FFmpegService {
           };
         } else {
           // File esiste e si vuole sovrascrivere
-          appLog('⚠️ File esistente verrà sovrascritto: $sanitizedPath');
+          appLog('File esistente verrà sovrascritto: $sanitizedPath');
         }
       }
 
@@ -1583,7 +1583,7 @@ class FFmpegService {
         useAdvancedFlags: true,
       );
     } catch (e) {
-      appLog('❌ [FFmpegService] Errore generazione filtro scale: $e');
+      appLog('[FFmpegService] Errore generazione filtro scale: $e');
       return null;
     }
   }
@@ -1660,19 +1660,19 @@ class FFmpegService {
       // Salta filtri troppo pesanti o complessi
       if (trimmed.contains('nlmeans')) {
         // nlmeans è troppo pesante, salta
-        appLog('   ⚠️ Rimuovendo nlmeans dalla catena (troppo pesante)');
+        appLog('   Rimuovendo nlmeans dalla catena (troppo pesante)');
         continue;
       }
       
       if (trimmed.contains('zscale') && filterChain.contains('tonemap')) {
         // HDR tone mapping è troppo complesso, salta
-        appLog('   ⚠️ Rimuovendo HDR tone mapping dalla catena (troppo pesante)');
+        appLog('   Rimuovendo HDR tone mapping dalla catena (troppo pesante)');
         continue;
       }
       
       // Limita il numero totale di filtri
       if (filterCount >= maxFilters) {
-        appLog('   ⚠️ Limite filtri raggiunto ($maxFilters), saltando filtri aggiuntivi');
+        appLog('   Limite filtri raggiunto ($maxFilters), saltando filtri aggiuntivi');
         break;
       }
       
@@ -1833,7 +1833,7 @@ class FFmpegService {
   ) {
     final safeAudioQuality = audioQuality.clamp(128, 320);
     
-    // DETERMINA IL CODEC IN BASE AL FORMATO DI OUTPUT SE NON SPECIFICATO
+    // Default audio codec from the output format
     String effectiveCodec = audioCodec;
     final outputExt = outputPath.toLowerCase().split('.').last;
     if (audioCodec.isEmpty || audioCodec == 'auto' || 
@@ -1867,7 +1867,7 @@ class FFmpegService {
           // Mantieni il codec originale se non riconosciuto
           break;
       }
-      appLog('🔄 [FFmpegService] Codec auto-determinato da estensione: $effectiveCodec (da .$outputExt)');
+      appLog('[FFmpegService] Codec auto-determinato da estensione: $effectiveCodec (da .$outputExt)');
     }
     
     String ffmpegCodec = effectiveCodec;
@@ -1927,7 +1927,7 @@ class FFmpegService {
     _addAudioCodecAndQuality(command, outputPath, audioQuality, audioCodec);
     command.add(outputPath);
     
-    appLog('🎵 [FFmpegService] Audio conversion command built');
+    appLog('[FFmpegService] Audio conversion command built');
     
     return command;
   }
@@ -1958,7 +1958,7 @@ class FFmpegService {
         command.addAll(['-af', audioFilterChain]);
       }
       command.add(outputPath);
-      appLog('🎵 [FFmpegService] WAV extraction: -i -vn -acodec pcm_s16le ${audioFilterChain.isNotEmpty ? "-af ..." : ""}');
+      appLog('[FFmpegService] WAV extraction: -i -vn -acodec pcm_s16le ${audioFilterChain.isNotEmpty ? "-af ..." : ""}');
       return command;
     }
     
@@ -1979,7 +1979,7 @@ class FFmpegService {
     }
     command.add(outputPath);
     
-    appLog('🎵 [FFmpegService] Audio extraction: -i -vn -c:a -f $outputExt');
+    appLog('[FFmpegService] Audio extraction: -i -vn -c:a -f $outputExt');
     return command;
   }
 
@@ -1997,7 +1997,7 @@ class FFmpegService {
     if (!imageFilters.useCustomResolution && 
         imageFilters.enableUpscaling && 
         imageFilters.upscaleFactor > 1.0) {
-      appLog('   🚀 Starting AI upscaling by ${imageFilters.upscaleFactor}x...');
+      appLog('   Starting AI upscaling by ${imageFilters.upscaleFactor}x...');
       
       // Inizializza l'upscaler se non già fatto
       await _imageUpscaler.initialize();
@@ -2015,9 +2015,9 @@ class FFmpegService {
       
       if (upscaledResult != null && File(upscaledResult).existsSync()) {
         workingInputPath = upscaledResult;
-        appLog('   ✅ AI upscaling completed: $upscaledResult');
+        appLog('   AI upscaling completed: $upscaledResult');
       } else {
-        appLog('   ⚠️ AI upscaling failed, using FFmpeg fallback');
+        appLog('   AI upscaling failed, using FFmpeg fallback');
         // Fallback a FFmpeg per upscaling
       }
     }
@@ -2070,7 +2070,7 @@ class FFmpegService {
             }
           }
         } catch (e) {
-          appLog('   ⚠️ Error getting image dimensions: $e');
+          appLog('   Error getting image dimensions: $e');
         }
     } else if (imageFilters.enableUpscaling && imageFilters.upscaleFactor > 1.0 && workingInputPath == inputPath) {
       // Fallback FFmpeg upscaling se AI non disponibile
@@ -2138,12 +2138,12 @@ class FFmpegService {
 
     if (filtersList.isNotEmpty) {
       command.addAll(['-vf', filtersList.join(',')]);
-      appLog('   ✅ Applied ${filtersList.length} image filter(s)');
+      appLog('   Applied ${filtersList.length} image filter(s)');
     } else {
-      appLog('   ⚠️ No filters to apply');
+      appLog('   No filters to apply');
     }
 
-    // PARAMETRI QUALITÀ PER IMMAGINI
+    // Quality settings for images
     // Determina il formato di output dall'estensione
     final outputExt = workingOutputPath.toLowerCase().split('.').last;
     
@@ -2167,7 +2167,7 @@ class FFmpegService {
     
     command.add(workingOutputPath);
     
-    appLog('   📸 Image output format: $outputExt');
+    appLog('   Image output format: $outputExt');
     return command;
   }
 
@@ -2220,9 +2220,9 @@ class FFmpegService {
         'volume': output.contains('volume'),
       };
       
-      appLog('📋 Available filters: $_availableFilters');
+      appLog('Available filters: $_availableFilters');
     } catch (e) {
-      appLog('⚠️ Error checking filters: $e');
+      appLog('Error checking filters: $e');
       // Default: assume che i filtri base siano disponibili
       _availableFilters = {
         'hqdn3d': true,
@@ -2243,7 +2243,7 @@ class FFmpegService {
   bool _isFilterAvailable(String filterName) {
     // Se i filtri non sono stati ancora controllati, assume che siano disponibili
     // (fallback ottimistico - il controllo verrà fatto prima dell'uso in convertMedia)
-    // IMPORTANTE: _checkAvailableFilters() viene sempre chiamato prima di costruire i comandi
+    // _checkAvailableFilters() always runs before building commands
     if (_availableFilters == null || !_filtersChecked) {
       // Se il controllo è in corso, aspetta che finisca (sincrono, quindi restituisce true come fallback)
       // In pratica, questo non dovrebbe mai accadere perché _checkAvailableFilters() 
@@ -2269,7 +2269,7 @@ class FFmpegService {
     
     try {
       _availableGpuAccelerations = {};
-      appLog('🔍 Checking available GPU accelerations...');
+      appLog('Checking available GPU accelerations...');
       
       // Controlla encoder disponibili
       final encodersResult = await Process.run(FFmpegPaths.ffmpegPath, ['-hide_banner', '-encoders']);
@@ -2375,7 +2375,7 @@ class FFmpegService {
       
       _availableGpuAccelerations!['detected_gpu'] = detectedGpu;
       
-      appLog('✅ GPU acceleration check completed:');
+      appLog('GPU acceleration check completed:');
       appLog('   Detected GPU: $detectedGpu');
       appLog('   NVIDIA: ${_availableGpuAccelerations!['nvidia']}');
       appLog('   Intel: ${_availableGpuAccelerations!['intel']}');
@@ -2384,7 +2384,7 @@ class FFmpegService {
       appLog('   VAAPI: ${_availableGpuAccelerations!['vaapi']}');
       
     } catch (e) {
-      appLog('⚠️ Error checking GPU acceleration: $e');
+      appLog('Error checking GPU acceleration: $e');
       _availableGpuAccelerations = {
         'nvidia': false,
         'intel': false,
@@ -2492,9 +2492,9 @@ class FFmpegService {
           _availableGpuAccelerations!['nvidia_hevc_dec'] == true;
       if (decOk && !hasVideoFilters) {
         args.addAll(['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda']);
-        appLog('🚀 NVIDIA: NVDEC decode (CUDA) — nessun filtro video');
+        appLog('NVIDIA: NVDEC decode (CUDA) — nessun filtro video');
       } else if (decOk && hasVideoFilters) {
-        appLog('ℹ️ NVIDIA: decode software + filtri CPU — NVENC invariato (stabilità con -vf)');
+        appLog('ℹNVIDIA: decode software + filtri CPU — NVENC invariato (stabilità con -vf)');
       }
     }
     // Intel QSV: decode hw solo senza filtri (stesso principio)
@@ -2503,9 +2503,9 @@ class FFmpegService {
           _availableGpuAccelerations!['intel_hevc_dec'] == true;
       if (decOk && !hasVideoFilters) {
         args.addAll(['-hwaccel', 'qsv']);
-        appLog('🚀 Intel: QSV decode (nessun filtro video)');
+        appLog('Intel: QSV decode (nessun filtro video)');
       } else if (decOk && hasVideoFilters) {
-        appLog('ℹ️ Intel: decode software — filtri attivi (encode hw se codec lo consente)');
+        appLog('ℹIntel: decode software — filtri attivi (encode hw se codec lo consente)');
       }
     }
     // VAAPI
@@ -2516,16 +2516,16 @@ class FFmpegService {
           '-hwaccel_device', '/dev/dri/renderD128',
           '-hwaccel_output_format', 'vaapi',
         ]);
-        appLog('🚀 VAAPI: decode hw (nessun filtro video)');
+        appLog('VAAPI: decode hw (nessun filtro video)');
       } else {
-        appLog('ℹ️ VAAPI: decode software — filtri attivi');
+        appLog('ℹVAAPI: decode software — filtri attivi');
       }
     }
     
     if (args.isNotEmpty) {
-      appLog('✅ GPU acceleration args: ${args.join(" ")}');
+      appLog('GPU acceleration args: ${args.join(" ")}');
     } else {
-      appLog('ℹ️ GPU detected ($gpuType) ma usando solo hardware codec (no hwaccel flags)');
+      appLog('ℹGPU detected ($gpuType) ma usando solo hardware codec (no hwaccel flags)');
     }
     
     return args;
@@ -2538,7 +2538,7 @@ class FFmpegService {
     if (requestedThreads == 0) {
       final chosen = usingGpu ? gpuSuggested : platform;
       appLog(
-        '💻 Thread FFmpeg (-threads): $chosen (tutti i logical processor; '
+        'Thread FFmpeg (-threads): $chosen (tutti i logical processor; '
         'GPU encode: $usingGpu)',
       );
       return chosen;
@@ -2546,7 +2546,7 @@ class FFmpegService {
     final cappedMax = usingGpu ? gpuSuggested : platform;
     final capped = requestedThreads.clamp(1, cappedMax);
     appLog(
-      '💻 Thread FFmpeg: $capped (richiesti: $requestedThreads, max: $cappedMax)',
+      'Thread FFmpeg: $capped (richiesti: $requestedThreads, max: $cappedMax)',
     );
     return capped;
   }
@@ -2609,7 +2609,7 @@ class FFmpegService {
     Process? process;
     
     try {
-      appLog('🚀 Executing FFmpeg command...');
+      appLog('Executing FFmpeg command...');
       
       final outputFile = File(outputPath);
       if (await outputFile.exists()) {
@@ -2617,7 +2617,7 @@ class FFmpegService {
       }
 
       // Log comando completo per debug
-      appLog('🔧 [FFmpeg] Comando completo: ${command.join(" ")}');
+      appLog('[FFmpeg] Comando completo: ${command.join(" ")}');
       
       process = await Process.start(command[0], command.sublist(1));
       _activeProcesses[taskId] = process;
@@ -2643,14 +2643,14 @@ class FFmpegService {
                 stdoutBuffer.writeln(line);
                 // Log stdout per debug
                 if (line.trim().isNotEmpty) {
-                  appLog('📤 [FFmpeg stdout] $line');
+                  appLog('[FFmpeg stdout] $line');
                 }
               } catch (e) {
-                appLog('⚠️ [FFmpeg] Errore processamento stdout: $e');
+                appLog('[FFmpeg] Errore processamento stdout: $e');
               }
             },
             onError: (error) {
-              appLog('⚠️ [FFmpeg] Errore stream stdout: $error');
+              appLog('[FFmpeg] Errore stream stdout: $error');
               // Non bloccare la conversione per errori di stream
             },
             onDone: () {
@@ -2668,7 +2668,7 @@ class FFmpegService {
                 // Cattura TUTTI gli errori, non solo alcuni
                 if (line.trim().isNotEmpty) {
                   stderrBuffer.writeln(line);
-                  appLog('⚠️ [FFmpeg stderr] $line');
+                  appLog('[FFmpeg stderr] $line');
                 }
 
                 // Parsing durata con gestione errori
@@ -2685,7 +2685,7 @@ class FFmpegService {
                     }
                   } catch (e) {
                     // Ignora errori di parsing durata
-                    appLog('⚠️ [FFmpeg] Errore parsing durata: $e');
+                    appLog('[FFmpeg] Errore parsing durata: $e');
                   }
                 }
 
@@ -2747,15 +2747,15 @@ class FFmpegService {
                     }
                   } catch (e) {
                     // Ignora errori di parsing progresso
-                    appLog('⚠️ [FFmpeg] Errore parsing progresso: $e');
+                    appLog('[FFmpeg] Errore parsing progresso: $e');
                   }
                 }
               } catch (e) {
-                appLog('⚠️ [FFmpeg] Errore processamento stderr: $e');
+                appLog('[FFmpeg] Errore processamento stderr: $e');
               }
             },
             onError: (error) {
-              appLog('⚠️ [FFmpeg] Errore stream stderr: $error');
+              appLog('[FFmpeg] Errore stream stderr: $error');
               // Non bloccare la conversione per errori di stream
             },
             onDone: () {
@@ -2769,12 +2769,12 @@ class FFmpegService {
       try {
         exitCode = await process.exitCode;
       } catch (e) {
-        appLog('⚠️ [FFmpeg] Errore ottenimento exit code: $e');
+        appLog('[FFmpeg] Errore ottenimento exit code: $e');
         // Se il processo è stato terminato, prova a killarlo
         try {
           process.kill();
         } catch (killError) {
-          appLog('⚠️ [FFmpeg] Errore kill processo: $killError');
+          appLog('[FFmpeg] Errore kill processo: $killError');
         }
       }
       
@@ -2782,13 +2782,13 @@ class FFmpegService {
       try {
         _outputSubscriptions.remove(taskId)?.cancel();
       } catch (e) {
-        appLog('⚠️ [FFmpeg] Errore cancellazione subscription: $e');
+        appLog('[FFmpeg] Errore cancellazione subscription: $e');
       }
       
       try {
         _activeProcesses.remove(taskId);
       } catch (e) {
-        appLog('⚠️ [FFmpeg] Errore rimozione processo: $e');
+        appLog('[FFmpeg] Errore rimozione processo: $e');
       }
 
       // Solo exit code + file output: stderr contiene anche avvisi innocui (CUDA/NVDEC, progress)
@@ -2820,8 +2820,8 @@ class FFmpegService {
           finalErrorMessage = stdoutMessage;
         } else {
           finalErrorMessage = 'FFmpeg fallito senza output di errore. Exit code: $exitCode';
-          appLog('⚠️ [FFmpeg] Nessun output stderr, ma exit code = $exitCode');
-          appLog('⚠️ [FFmpeg] Comando eseguito: ${command.join(" ")}');
+          appLog('[FFmpeg] Nessun output stderr, ma exit code = $exitCode');
+          appLog('[FFmpeg] Comando eseguito: ${command.join(" ")}');
         }
       }
 
@@ -2830,7 +2830,7 @@ class FFmpegService {
           _stderrSuggestsUnsupportedHwEncoderOption(finalErrorMessage)) {
         final safeCommand = _buildSafeHardwareRetryCommand(command);
         if (!_commandsEquivalent(command, safeCommand)) {
-          appLog('⚠️ [FFmpeg] Retry safe hardware profile (unsupported HW option)');
+          appLog('[FFmpeg] Retry safe hardware profile (unsupported HW option)');
           return _runFFmpegCommand(
             taskId: taskId,
             command: safeCommand,
@@ -2850,7 +2850,7 @@ class FFmpegService {
       if (hardwareRetryStage <= 1 && useGpu && looksLikeCodecIssue) {
         final minimalGpuCommand = _buildMinimalGpuRetryCommand(command);
         if (!_commandsEquivalent(command, minimalGpuCommand)) {
-          appLog('⚠️ [FFmpeg] Retry minimal GPU profile');
+          appLog('[FFmpeg] Retry minimal GPU profile');
           return _runFFmpegCommand(
             taskId: taskId,
             command: minimalGpuCommand,
@@ -2866,7 +2866,7 @@ class FFmpegService {
       if (hardwareRetryStage <= 2 && useGpu && looksLikeCodecIssue) {
         final cpuFallbackCommand = _buildCpuFallbackRetryCommand(command);
         if (!_commandsEquivalent(command, cpuFallbackCommand)) {
-          appLog('⚠️ [FFmpeg] Retry CPU fallback profile');
+          appLog('[FFmpeg] Retry CPU fallback profile');
           return _runFFmpegCommand(
             taskId: taskId,
             command: cpuFallbackCommand,
@@ -2888,7 +2888,7 @@ class FFmpegService {
         final preview = finalErrorMessage.length > 400
             ? '${finalErrorMessage.substring(0, 400)}...'
             : finalErrorMessage;
-        appLog('❌ FFmpeg error (exit code: $exitCode, interrupted): $preview');
+        appLog('FFmpeg error (exit code: $exitCode, interrupted): $preview');
       }
       // Analizza l'errore per fornire messaggi più informativi
       else if (finalErrorMessage.contains('No such file or directory')) {
@@ -2950,10 +2950,10 @@ class FFmpegService {
       }
       
       if (!interruptedExit) {
-        appLog('❌ FFmpeg error (exit code: $exitCode): $finalErrorMessage');
+        appLog('FFmpeg error (exit code: $exitCode): $finalErrorMessage');
       }
       if (finalErrorMessage.isEmpty && !interruptedExit) {
-        appLog('⚠️ [FFmpeg] Nessun messaggio di errore catturato. Verifica il comando FFmpeg.');
+        appLog('[FFmpeg] Nessun messaggio di errore catturato. Verifica il comando FFmpeg.');
       }
       
       return {
@@ -2965,14 +2965,14 @@ class FFmpegService {
       };
     } catch (e, stackTrace) {
       // Gestione errori robusta per prevenire crash
-      appLog('❌ [FFmpeg] Errore critico in _runFFmpegCommand: $e');
-      appLog('📚 [FFmpeg] Stack trace: $stackTrace');
+      appLog('[FFmpeg] Errore critico in _runFFmpegCommand: $e');
+      appLog('[FFmpeg] Stack trace: $stackTrace');
       
       // Pulisci risorse in modo sicuro
       try {
         _outputSubscriptions.remove(taskId)?.cancel();
       } catch (cleanupError) {
-        appLog('⚠️ [FFmpeg] Errore durante cleanup subscription: $cleanupError');
+        appLog('[FFmpeg] Errore durante cleanup subscription: $cleanupError');
       }
       
       try {
@@ -2981,11 +2981,11 @@ class FFmpegService {
           try {
             process.kill();
           } catch (killError) {
-            appLog('⚠️ [FFmpeg] Errore durante kill processo: $killError');
+            appLog('[FFmpeg] Errore durante kill processo: $killError');
           }
         }
       } catch (cleanupError) {
-        appLog('⚠️ [FFmpeg] Errore durante cleanup processo: $cleanupError');
+        appLog('[FFmpeg] Errore durante cleanup processo: $cleanupError');
       }
       
       return {
@@ -3266,7 +3266,7 @@ class FFmpegService {
     final heavyAnalysis = analysis?['needs_advanced_processing'] == true ||
         analysis?['quality_issues']?.contains('heavy_compression') == true;
     if (heavyFilters || heavyAnalysis) {
-      appLog('⚡ Auto policy: SPEED (heavy filter chain detected)');
+      appLog('Auto policy: SPEED (heavy filter chain detected)');
       return _EncodePolicy.speed;
     }
 
@@ -3274,11 +3274,11 @@ class FFmpegService {
         analysis?['quality_issues']?.contains('low_bitrate') == true ||
         analysis?['quality_issues']?.contains('old_codec') == true;
     if (highDetailSource && !codec.contains('av1')) {
-      appLog('🎯 Auto policy: QUALITY (source needs cleanup)');
+      appLog('Auto policy: QUALITY (source needs cleanup)');
       return _EncodePolicy.quality;
     }
 
-    appLog('⚖️ Auto policy: BALANCED');
+    appLog('Auto policy: BALANCED');
     return _EncodePolicy.balanced;
   }
   
@@ -3343,7 +3343,7 @@ class FFmpegService {
   }
   
   /// Ottiene il pixel format ottimale per il codec
-  /// IMPORTANTE: Preserva il formato originale quando possibile per evitare conversioni che scuriscono
+  /// Keeps the original pixel format when possible to avoid darkening conversions
   String? _getOptimalPixelFormat(String codec, bool useGpu, Map<String, dynamic>? analysis) {
     // Per codec software, preserva il formato originale invece di forzare yuv420p
     // La conversione può causare problemi di luminosità

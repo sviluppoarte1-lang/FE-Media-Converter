@@ -39,7 +39,7 @@ class VideoPreProcessor {
           },
         );
       } catch (e) {
-        appLog('⚠️ [VideoPreProcessor] ffprobe timeout o errore: $e');
+        appLog('[VideoPreProcessor] ffprobe timeout o errore: $e');
         // Continua con solo analisi pixel se ffprobe fallisce
         final pixelAnalysis = await _analyzePixelQualityForBrightness(inputPath)
             .timeout(
@@ -79,26 +79,26 @@ class VideoPreProcessor {
             final height = _safeParseInt(videoStream['height']);
             if (width != null && height != null) {
               isVertical = height > width;
-              appLog('   📐 Video ${isVertical ? "VERTICALE" : "ORIZZONTALE"} rilevato (${width}x$height)');
+              appLog('   Video ${isVertical ? "VERTICALE" : "ORIZZONTALE"} rilevato (${width}x$height)');
             }
           }
         } catch (e) {
-          appLog('   ⚠️ Impossibile rilevare orientamento: $e');
+          appLog('   Impossibile rilevare orientamento: $e');
         }
       }
       
       // CRITICO: Analisi pixel-per-pixel per luminosità e contrasto
       // Questa analisi viene SEMPRE eseguita, anche se ffprobe fallisce
       // Con timeout per evitare blocchi
-      // IMPORTANTE: Passa isVertical per applicare soglie più restrittive per video verticali
-      appLog('🔍 [VideoPreProcessor] Eseguendo analisi pixel-per-pixel per luminosità e contrasto...');
+      // Vertical videos use stricter thresholds
+      appLog('[VideoPreProcessor] Eseguendo analisi pixel-per-pixel per luminosità e contrasto...');
       Map<String, dynamic> pixelAnalysis;
       try {
         pixelAnalysis = await _analyzePixelQualityForBrightness(inputPath, isVertical: isVertical)
             .timeout(
               const Duration(seconds: 15),
               onTimeout: () {
-                appLog('⚠️ [VideoPreProcessor] Timeout analisi pixel (15s)');
+                appLog('[VideoPreProcessor] Timeout analisi pixel (15s)');
                 return {
                   'success': false,
                   'error': 'Timeout analisi pixel dopo 15 secondi'
@@ -106,7 +106,7 @@ class VideoPreProcessor {
               },
             );
       } catch (e) {
-        appLog('⚠️ [VideoPreProcessor] Errore analisi pixel: $e');
+        appLog('[VideoPreProcessor] Errore analisi pixel: $e');
         pixelAnalysis = {
           'success': false,
           'error': 'Errore analisi pixel: $e'
@@ -121,13 +121,13 @@ class VideoPreProcessor {
         qualityAnalysis['pixel_analysis'] = pixelAnalysis;
         
         if (pixelAnalysis['success'] == true) {
-          appLog('✅ [VideoPreProcessor] Analisi pixel-per-pixel completata con successo');
+          appLog('[VideoPreProcessor] Analisi pixel-per-pixel completata con successo');
           final avgBrightness = pixelAnalysis['average_brightness'] as double?;
           final avgContrast = pixelAnalysis['average_contrast'] as double?;
           final isTooDark = pixelAnalysis['is_too_dark'] as bool? ?? false;
           final lowContrast = pixelAnalysis['low_contrast'] as bool? ?? false;
           
-          appLog('   📊 Risultati analisi:');
+          appLog('   Risultati analisi:');
           appLog('      Luminosità media: ${avgBrightness?.toStringAsFixed(2) ?? "N/A"}');
           appLog('      Contrasto medio: ${avgContrast?.toStringAsFixed(2) ?? "N/A"}');
           appLog('      Troppo scuro: $isTooDark');
@@ -137,20 +137,20 @@ class VideoPreProcessor {
           if (isTooDark == true) {
             qualityAnalysis['quality_issues'].add('too_dark');
             qualityAnalysis['recommendations'].add('Automatic brightness correction');
-            appLog('   ⚠️ Video troppo scuro - correzione automatica verrà applicata');
+            appLog('   Video troppo scuro - correzione automatica verrà applicata');
           }
           if (pixelAnalysis['is_too_bright'] == true) {
             qualityAnalysis['quality_issues'].add('too_bright');
             qualityAnalysis['recommendations'].add('Automatic brightness reduction');
-            appLog('   ⚠️ Video troppo chiaro - nessuna correzione (non scuriremo)');
+            appLog('   Video troppo chiaro - nessuna correzione (non scuriremo)');
           }
           if (lowContrast == true) {
             qualityAnalysis['quality_issues'].add('low_contrast');
             qualityAnalysis['recommendations'].add('Contrast enhancement');
-            appLog('   ⚠️ Contrasto basso - correzione automatica verrà applicata');
+            appLog('   Contrasto basso - correzione automatica verrà applicata');
           }
         } else {
-          appLog('⚠️ [VideoPreProcessor] Analisi pixel-per-pixel fallita: ${pixelAnalysis['error']}');
+          appLog('[VideoPreProcessor] Analisi pixel-per-pixel fallita: ${pixelAnalysis['error']}');
           appLog('   → Continuo senza correzioni automatiche di luminosità/contrasto');
         }
         
@@ -161,7 +161,7 @@ class VideoPreProcessor {
               .timeout(
                 const Duration(seconds: 15),
                 onTimeout: () {
-                  appLog('⚠️ [VideoPreProcessor] Timeout analisi frame-per-frame (15s) - salto');
+                  appLog('[VideoPreProcessor] Timeout analisi frame-per-frame (15s) - salto');
                   return {
                     'success': false,
                     'error': 'Timeout analisi frame-per-frame'
@@ -195,21 +195,21 @@ class VideoPreProcessor {
             }
           }
         } catch (e) {
-          appLog('⚠️ [VideoPreProcessor] Errore analisi frame-per-frame: $e - continuo senza');
+          appLog('[VideoPreProcessor] Errore analisi frame-per-frame: $e - continuo senza');
           // Non fallire se l'analisi frame-per-frame fallisce
         }
         
         // AGGIUNTA: Analisi scene con PySceneDetect per ottimizzazione qualità
         // Con timeout per evitare blocchi
         try {
-          appLog('🎬 [VideoPreProcessor] Eseguendo analisi scene con PySceneDetect...');
+          appLog('[VideoPreProcessor] Eseguendo analisi scene con PySceneDetect...');
           final sceneAnalysis = await SceneDetectionService.analyzeVideoForOptimization(
             videoPath: inputPath,
             method: 'adaptive',
           ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              appLog('⚠️ [VideoPreProcessor] Timeout analisi scene (30s) - salto');
+              appLog('[VideoPreProcessor] Timeout analisi scene (30s) - salto');
               return {
                 'success': false,
                 'error': 'Timeout analisi scene'
@@ -225,7 +225,7 @@ class VideoPreProcessor {
               final recommendations = qualityRecs['recommendations'] as Map<String, dynamic>?;
               if (recommendations != null) {
                 final totalScenes = sceneAnalysis['total_scenes'] as int? ?? 0;
-                appLog('   🎬 Scene rilevate: $totalScenes');
+                appLog('   Scene rilevate: $totalScenes');
                 
                 // Aggiungi raccomandazioni basate sulle scene
                 if (recommendations['has_rapid_cuts'] == true) {
@@ -238,18 +238,18 @@ class VideoPreProcessor {
                 qualityAnalysis['scene_based_crf'] = recommendations['suggested_crf'];
                 qualityAnalysis['scene_based_bitrate'] = recommendations['suggested_bitrate'];
                 
-                appLog('   💡 Raccomandazioni qualità basate su scene:');
+                appLog('   Raccomandazioni qualità basate su scene:');
                 appLog('      → Bitrate mode: ${recommendations['suggested_bitrate_mode']}');
                 appLog('      → CRF suggerito: ${recommendations['suggested_crf']}');
                 appLog('      → Bitrate suggerito: ${recommendations['suggested_bitrate']} kbps');
               }
             }
           } else {
-            appLog('⚠️ [VideoPreProcessor] Analisi scene fallita: ${sceneAnalysis['error']}');
+            appLog('[VideoPreProcessor] Analisi scene fallita: ${sceneAnalysis['error']}');
             // Non fallire se l'analisi scene fallisce - è opzionale
           }
         } catch (e) {
-          appLog('⚠️ [VideoPreProcessor] Errore analisi scene: $e - continuo senza');
+          appLog('[VideoPreProcessor] Errore analisi scene: $e - continuo senza');
           // Non fallire se l'analisi scene fallisce - è opzionale
         }
         
@@ -264,7 +264,7 @@ class VideoPreProcessor {
         };
       } else {
         // Anche se ffprobe fallisce, restituisci l'analisi pixel se disponibile
-        appLog('⚠️ [VideoPreProcessor] ffprobe fallito, ma analisi pixel disponibile');
+        appLog('[VideoPreProcessor] ffprobe fallito, ma analisi pixel disponibile');
         return {
           'success': pixelAnalysis['success'] == true,  // Successo se almeno pixel analysis funziona
           'error': 'ffprobe failed: ${process.stderr}',
@@ -342,7 +342,7 @@ class VideoPreProcessor {
     stats['contrast_normalized'] = (maxBrightness - minBrightness) / 255.0;
     
     // Determina se troppo scuro/chiaro - SOGLIE MOLTO PIÙ RESTRITTIVE
-    // IMPORTANTE: Solo video VERAMENTE troppo scuri vengono corretti
+    // Only genuinely underexposed videos are corrected
     // Video normali (>= 100/255) NON vengono MAI modificati
     // NOTA: Per video verticali, le soglie sono ancora più restrittive per evitare correzioni errate
     // I video verticali spesso hanno caratteristiche di luminosità diverse e non devono essere modificati
@@ -354,12 +354,12 @@ class VideoPreProcessor {
     stats['low_contrast'] = (maxBrightness - minBrightness) < 50.0;  // < 20% del range (molto più restrittivo)
     
     if (isVertical) {
-      appLog('   📐 Video VERTICALE rilevato - soglie più restrittive applicate');
+      appLog('   Video VERTICALE rilevato - soglie più restrittive applicate');
       appLog('      Soglia "troppo scuro" per verticali: < $tooDarkThreshold (vs 70 per orizzontali)');
     }
     
     // Calcola correzioni raccomandate - SOLO se necessario
-    // IMPORTANTE: NON SCURIRE MAI I VIDEO - Solo aumentare luminosità se troppo scuri
+    // Never darken: only lift brightness when too dark
     // Video normali (80-255) NON vengono modificati
     // Per video verticali: ancora più conservativo - solo se estremamente scuri
     final targetBrightness = 128.0;  // Target: 50% luminosità
@@ -373,14 +373,14 @@ class VideoPreProcessor {
       stats['recommended_brightness'] = (brightnessDiff / 255.0 * 0.8).clamp(0.0, maxCorrection);
       appLog('   → Video troppo scuro (${avgBrightness.toStringAsFixed(1)}), aumentando luminosità');
       if (isVertical) {
-        appLog('      ⚠️ Video VERTICALE - correzione conservativa applicata (max +0.2)');
+        appLog('      Video VERTICALE - correzione conservativa applicata (max +0.2)');
       }
     } else {
       // Video con luminosità normale o chiara - NON modificare (mai scurire!)
       stats['recommended_brightness'] = 0.0;
-      appLog('   ✅ Luminosità normale/chiara (${avgBrightness.toStringAsFixed(1)}), nessuna correzione necessaria');
+      appLog('   Luminosità normale/chiara (${avgBrightness.toStringAsFixed(1)}), nessuna correzione necessaria');
       if (isVertical && avgBrightness >= correctionThreshold) {
-        appLog('      📐 Video VERTICALE con luminosità normale - GARANTITO nessuna modifica');
+        appLog('      Video VERTICALE con luminosità normale - GARANTITO nessuna modifica');
       }
     }
     
@@ -394,7 +394,7 @@ class VideoPreProcessor {
     }
     
     // Gamma raccomandato
-    // IMPORTANTE: Gamma < 1.0 scurisce, quindi mai ridurre gamma per video chiari
+    // Gamma below 1.0 darkens, so never lower it on bright videos
     if (avgBrightness < 100) {
       // Solo se troppo scuro, aumenta gamma per schiarire
       stats['recommended_gamma'] = 1.0 + ((100 - avgBrightness) / 255.0 * 0.3).clamp(0.0, 0.3);

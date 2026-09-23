@@ -33,7 +33,7 @@ class VideoUpscalerService {
 
       return {'width': width, 'height': height};
     } catch (e) {
-      appLog('❌ [VideoUpscaler] Errore ottenimento dimensioni: $e');
+      appLog('[VideoUpscaler] Errore ottenimento dimensioni: $e');
       return null;
     }
   }
@@ -207,7 +207,7 @@ class VideoUpscalerService {
     final heightFactor = targetHeight / originalHeight;
     
     if (widthFactor > 4.0 || heightFactor > 4.0) {
-      appLog('⚠️ [VideoUpscaler] Fattore di upscaling troppo alto (>4x), potrebbe degradare la qualità');
+      appLog('[VideoUpscaler] Fattore di upscaling troppo alto (>4x), potrebbe degradare la qualità');
       return false;
     }
 

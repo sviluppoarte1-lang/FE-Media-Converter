@@ -1,7 +1,7 @@
 # Python dependencies for Video Converter Pro
-# DRUNet denoising
-torch>=2.0.0
-torchvision>=0.15.0
+# DRUNet denoising runs via ONNX Runtime (see requirements-drunet.txt).
+# PyTorch is NOT required anymore (legacy fallback only, ~7GB with CUDA):
+# install manually only if you need the old .pth path without .onnx.
 numpy>=1.24.0
 Pillow>=10.0.0
 opencv-python>=4.8.0

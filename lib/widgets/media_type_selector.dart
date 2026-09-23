@@ -64,7 +64,6 @@ class _MediaTypeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: isSelected ? 4 : 1,
-      // CORREZIONE 1: Usa cardColor del tema scuro quando non selezionato
       color: isSelected
       ? _getColorForType(type).withOpacity(0.1)
       : Theme.of(context).cardColor,
@@ -75,9 +74,9 @@ class _MediaTypeCard extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Text(
+              Icon(
                 type.icon,
-                style: const TextStyle(fontSize: 24),
+                size: 28,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -89,7 +88,6 @@ class _MediaTypeCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        // CORREZIONE 2: Usa il colore del testo del tema quando non selezionato
                         color: isSelected
                         ? _getColorForType(type)
                         : Theme.of(context).textTheme.bodyLarge!.color,
