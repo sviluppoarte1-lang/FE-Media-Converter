@@ -72,3 +72,8 @@ snapcraft-fe-media-converter*.txt*
 
 # Legacy deb packaging
 package_deb/
+
+# AppImage build artifacts
+*.AppImage
+package_appimage/AppDir/
+package_appimage/squashfs-root/
